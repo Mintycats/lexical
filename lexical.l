@@ -38,6 +38,7 @@ RETURN return
 IF if
 ELSE else
 WHILE while
+EOF <<EOF>>
 
 %%
 "+" {printf("+");}
@@ -75,21 +76,14 @@ WHILE while
 {ID} {printf("%s", yytext);}
 " " {printf(" ");}
 
+\n {printf("\n");}
 
 
-. {printf("Error type A at Line %d: Mysterious characters \'%s\'\n", yylineno, yytext);}
+. {fprintf(stderr, "Error type A at line %d: Mysterious character \'%s\'\n", yylineno, yytext);}
+
 
 
 %%
-
-int main(int argc, char* argv[]){
-    yylex();
-    return 0;
-}
-
-int yywrap(){
-    return 1;
-}
 
 
 

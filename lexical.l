@@ -1,9 +1,17 @@
 %{
      #include<stdio.h>
      #include<string.h>
+     #include "syntax_arr.tab.h"
+     int yycolumn = 1;
+     #define YY_USER_ACTION \
+        yylloc.first_line = yylloc.last_line = yylineno;\
+        yylloc.first_column = yycolumn;\
+        yylloc.last_column = yycolumn + yyleng - 1;\
+        yycolumn += yyleng;
      int E2INT(char* text);
      int TS2INT(char* text);
-
+     void JumpALine();
+     bool JumpMoreLines();
 %}
 
 %option yylineno
@@ -45,42 +53,64 @@ WHILE while
 EOF <<EOF>>
 
 %%
-"+" {printf("+");}
-"-" {printf("-");}
-"*" {printf("*");}
-"/" {printf("/");}
-";" {printf(";");}
-"," {printf(",");}
-"=" {printf("=");}
-">" {printf(">");}
-"<" {printf("<");}
-">=" {printf(">=");}
-"<=" {printf("<=");}
-"==" {printf("==");}
-"!=" {printf("!=");}
-"&&" {printf("&&");}
-"||" {printf("||");}
-"!" {printf("!");}
-"(" {printf("(");}
-")" {printf(")");}
-"[" {printf("[");}
-"]" {printf("]");}
-"{" {printf("{");}
-"}" {printf("}");}
-"struct" {printf("struct");}
-"return" {printf("return");}
-"if" {printf("if");}
-"else" {printf("else");}
-"while" {printf("while");}
-{TYPE} {printf("%s", yytext);}
-{INT} {printf("%s", yytext);}
-{EINT} {printf("%d", E2INT(yytext));}
-{TSINT} {printf("%d", TS2INT(&yytext[2]));}
-{FLOAT} {printf("%s", yytext);}
-{ID} {printf("%s", yytext);}
-" " {printf(" ");}
-
-\n {printf("\n");}
+"+" {return PLUS;}
+"-" {return MINUS;}
+"*" {return STAR;}
+"/" {return DEV;}
+";" {return SEMI;}
+"," {return COMMA;}
+"=" {return ASSIGNOP;}
+">" {return RELOP;}
+"<" {return RELOP;}
+">=" {return RELOP;}
+"<=" {return RELOP;}
+"==" {return RELOP;}
+"!=" {return RELOP;}
+"&&" {return AND;}
+"||" {return OR;}
+"!" {return NOT;}
+"(" {return LP;}
+")" {return RP;}
+"[" {return LB;}
+"]" {return RB;}
+"{" {return LC;}
+"}" {return RC;}
+"struct" {return STRUCT;}
+"return" {return RETURN;}
+"if" {return IF;}
+"else" {return ELSE;}
+"while" {return WHILE;}
+{TYPE} {
+        yylval.type_string = strdup(yytext);
+        return TYPE;
+       }
+{INT} {
+        yylval.type_int = atoi(yytext);
+        return INT;
+      }
+{EINT} {
+        yylval.type_int = E2INT(yytext);
+        return INT;
+       }
+{TSINT} {
+        yylval.type_int = TS2INT(&yytext[2]);
+        return INT;
+        }
+{FLOAT} {
+        yylval.type_float = atof(yytext);
+        return FLOAT;
+        }
+{ID} {
+        yylval.type_string = strdup(yytext);
+        return ID;
+     }
+" " {}
+"//" {
+        JumpALine();
+     }
+\n {
+    yycolumn = 1;
+   }
 
 
 . {fprintf(stderr, "Error type A at line %d: Mysterious character \'%s\'\n", yylineno, yytext);}
@@ -132,4 +162,10 @@ int TS2INT(char* text){
      return num;
 }
 
+void JumpALine(){
+    char tmpchar = input();
+    while (tmpchar != '\n'){
+        tmpchar = input();
+    }
+}
 

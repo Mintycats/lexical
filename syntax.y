@@ -34,9 +34,9 @@
 %token LB RB
 %token LC RC
 %token <type_string> STRUCT RETURN IF ELSE WHILE
-%token <type_node> Program ExtDefList ExtDef Specifier ExtDecList
-%token <type_node> FunDec CompSt VarDec StructSpecifier OptTag DefList Tag
-%token <type_node> VarList ParamDec CompSt StmtList Stmt Exp DecList Dec Args
+%type <type_node> Program ExtDefList ExtDef Specifier ExtDecList
+%type <type_node> FunDec CompSt VarDec StructSpecifier OptTag DefList Tag
+%type <type_node> VarList ParamDec StmtList Stmt Exp DecList Dec Args
 
 
 /* declared priority */
@@ -44,7 +44,7 @@
 %left OR
 %left AND
 %left RELOP
-%left PLUS MINUS
+%left PLUS
 %left STAR DIV
 %right MINUS NOT
 %left LP RP LB RB DOT

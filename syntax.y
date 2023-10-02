@@ -1,23 +1,20 @@
 
+%locations
 %{
 
     #include<stdio.h>
     #include<string.h>
-    #include<lex.yy.c>
+    #include "lex.yy.c"
     int yylex(void);
     void yyerror(char*);
     /* declared tree node */
-    struct Node{
-        int todo;
-    }
 %}
 
 /* declared types */
 %union {
     int type_int;
     float type_float;
-    string type_string;
-    Node type_node;
+    char* type_string;
 }
 
 /* declared tokens */
@@ -34,10 +31,10 @@
 %token LB RB
 %token LC RC
 %token <type_string> STRUCT RETURN IF ELSE WHILE
-%type <type_node> Program ExtDefList ExtDef Specifier ExtDecList
+/*%type <type_node> Program ExtDefList ExtDef Specifier ExtDecList
 %type <type_node> FunDec CompSt VarDec StructSpecifier OptTag DefList Tag
 %type <type_node> VarList ParamDec StmtList Stmt Exp DecList Dec Args
-
+*/
 
 /* declared priority */
 %right ASSIGNOP
@@ -49,6 +46,9 @@
 %right MINUS NOT
 %left LP RP LB RB DOT
 
+
+%nonassoc LOWER_ELSE
+%nonassoc ELSE
 
 %%
 
@@ -99,6 +99,7 @@ ParamDec : Specifier VarDec
          ;
 
 CompSt : LC DefList StmtList RC
+       | error RC
        ;
 
 StmtList : /* empty */
@@ -108,9 +109,10 @@ StmtList : /* empty */
 Stmt : Exp SEMI
      | CompSt
      | RETURN Exp SEMI
-     | IF LP Exp RP Stmt
+     | IF LP Exp RP Stmt %prec LOWER_ELSE
      | IF LP Exp RP Stmt ELSE Stmt
      | WHILE LP Exp RP Stmt
+     | error SEMI
      ;
 
 DefList : /* empty */
@@ -146,6 +148,7 @@ Exp : Exp ASSIGNOP Exp
     | ID
     | INT
     | FLOAT
+    | error RP
     ;
 
 Args : Exp COMMA Args
@@ -153,7 +156,8 @@ Args : Exp COMMA Args
      ;
 
 %%
-
-
-
-
+/*
+void yyerror(char* msg){
+    
+}
+*/

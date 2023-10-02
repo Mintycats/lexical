@@ -1,7 +1,5 @@
 %{
-     #include<stdio.h>
-     #include<string.h>
-     #include "syntax_arr.tab.h"
+     #include "syntax.tab.h"
      int yycolumn = 1;
      #define YY_USER_ACTION \
         yylloc.first_line = yylloc.last_line = yylineno;\
@@ -11,7 +9,6 @@
      int E2INT(char* text);
      int TS2INT(char* text);
      void JumpALine();
-     bool JumpMoreLines();
 %}
 
 %option yylineno
@@ -56,7 +53,7 @@ EOF <<EOF>>
 "+" {return PLUS;}
 "-" {return MINUS;}
 "*" {return STAR;}
-"/" {return DEV;}
+"/" {return DIV;}
 ";" {return SEMI;}
 "," {return COMMA;}
 "=" {return ASSIGNOP;}

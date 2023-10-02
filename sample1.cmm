@@ -1,11 +1,8 @@
 int main()
 {
     int i = 11222;
-    int j = ~i;
     int k = 012;
     int m = 0x12;
     int n = 01.23E12;
-    43.e-4;
-    .5E03;
-    float l = 2.3;
+    int o = m - n;
 }

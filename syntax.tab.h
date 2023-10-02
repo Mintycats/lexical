@@ -75,7 +75,8 @@ extern int yydebug;
     RETURN = 281,
     IF = 282,
     ELSE = 283,
-    WHILE = 284
+    WHILE = 284,
+    LOWER_ELSE = 285
   };
 #endif
 
@@ -83,12 +84,11 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 16 "syntax.y"
+#line 14 "syntax.y"
 
     int type_int;
     float type_float;
-    string type_string;
-    Node type_node;
+    char* type_string;
 
 #line 94 "syntax.tab.h"
 
@@ -98,9 +98,23 @@ typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+/* Location type.  */
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+};
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
+
 
 extern YYSTYPE yylval;
-
+extern YYLTYPE yylloc;
 int yyparse (void);
 
 #endif /* !YY_YY_SYNTAX_TAB_H_INCLUDED  */

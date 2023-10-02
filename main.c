@@ -9,7 +9,7 @@ int main(int argc, char** argv){
             return 1;
         }
         yyrestart(f);
-        yyprase();
+        yyparse();
         return 0;
     }
     return 1;

@@ -72,10 +72,10 @@ extern int yydebug;
     LC = 278,
     RC = 279,
     STRUCT = 280,
-    RETURN = 281,
-    IF = 282,
-    ELSE = 283,
-    WHILE = 284,
+    IF = 281,
+    ELSE = 282,
+    WHILE = 283,
+    RETURN = 284,
     LOWER_ELSE = 285
   };
 #endif
@@ -84,13 +84,14 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 14 "syntax.y"
+#line 51 "syntax.y"
 
     int type_int;
     float type_float;
     char* type_string;
+    struct Node* type_node;
 
-#line 94 "syntax.tab.h"
+#line 95 "syntax.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

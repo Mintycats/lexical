@@ -1,6 +1,10 @@
 #include<stdio.h>
-extern FILE* yyin;
-extern char* yylex();
+extern int yyparse(void);
+extern void yyrestart(FILE* input_file);
+extern int hasError;
+extern struct Node* Root;
+extern void PrintTree(struct Node* rootnode, int spaceNum);
+extern void TearsDown(struct Node* rootnode);
 int main(int argc, char** argv){
     if (argc > 1){
 	    FILE* f = fopen(argv[1], "r");
@@ -10,7 +14,10 @@ int main(int argc, char** argv){
         }
         yyrestart(f);
         yyparse();
+        if (!hasError){
+            PrintTree(Root, 0);
+        }
+        TearsDown(Root);
         return 0;
     }
-    return 1;
 }

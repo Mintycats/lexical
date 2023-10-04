@@ -78,7 +78,8 @@
     /* declared funcion */
     int yylex(void);
     void yyerror(char*);
-    void PrintError(char , int , char*);
+    int PrintError(char , int , char*);
+    int isNewError(int);
 
     /* declared tree node */
     enum Nodetype {
@@ -105,15 +106,22 @@
         struct Node* leftchild;
         struct Node* rightbrother;
     };
+
+    /* declared tree funcion */
     struct Node* MakeNode(char* nodename, enum Nodetype type, int lineno);
     void PrintTree(struct Node* rootnode, int spaceNum);
     void MakeTree(struct Node* father, struct Node* child);
     void TearsDown(struct Node* rootnode);
-
+    
+    /* declared global value */
     int hasError = 0;
+    int lastErrorLine = 0;
     struct Node* Root = NULL;
 
-#line 117 "syntax.tab.c"
+    struct Node* debugger = NULL;
+    struct Node* debugger2 = NULL;
+
+#line 125 "syntax.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -196,14 +204,14 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 51 "syntax.y"
+#line 59 "syntax.y"
 
     int type_int;
     float type_float;
     char* type_string;
     struct Node* type_node;
 
-#line 207 "syntax.tab.c"
+#line 215 "syntax.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -539,16 +547,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  11
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   266
+#define YYLAST   285
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  31
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  22
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  63
+#define YYNRULES  65
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  118
+#define YYNSTATES  122
 
 #define YYUNDEFTOK  2
 #define YYMAXUTOK   285
@@ -598,13 +606,13 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    93,    93,    99,   104,   110,   113,   122,   130,   139,
-     144,   155,   162,   169,   184,   194,   202,   205,   215,   223,
-     240,   255,   271,   280,   287,   295,   307,   312,   318,   321,
-     329,   334,   345,   360,   379,   394,   399,   407,   410,   421,
-     426,   437,   442,   453,   462,   471,   480,   489,   498,   507,
-     516,   525,   536,   544,   552,   567,   581,   593,   605,   613,
-     621,   629,   634,   643
+       0,   101,   101,   109,   124,   130,   133,   142,   150,   159,
+     164,   175,   183,   190,   205,   215,   223,   226,   236,   244,
+     259,   280,   295,   311,   320,   327,   335,   351,   368,   374,
+     377,   385,   390,   401,   416,   435,   450,   467,   479,   482,
+     503,   508,   519,   524,   535,   544,   553,   562,   571,   580,
+     589,   598,   607,   618,   626,   634,   649,   663,   675,   687,
+     695,   703,   711,   726,   747,   756
 };
 #endif
 
@@ -635,12 +643,12 @@ static const yytype_int16 yytoknum[] =
 };
 # endif
 
-#define YYPACT_NINF (-53)
+#define YYPACT_NINF (-55)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
 
-#define YYTABLE_NINF (-29)
+#define YYTABLE_NINF (-30)
 
 #define yytable_value_is_error(Yyn) \
   0
@@ -649,18 +657,19 @@ static const yytype_int16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int16 yypact[] =
 {
-      48,   -53,     7,    14,    66,    48,     4,   -53,    -4,     1,
-     -53,   -53,   -53,   -53,    11,   -53,    30,    43,    17,    48,
-       0,   -53,    81,    84,    68,    48,   -53,    81,    69,    48,
-     -53,    81,    75,    89,   -53,   -53,    80,   -53,    34,    56,
-      96,    97,   -53,   -53,   102,   -53,    48,   -53,    -7,   -53,
-     -53,    91,    77,    77,    77,    99,   107,    77,   -53,   101,
-      34,   106,    77,   -53,    81,   -53,   -53,   -53,    71,   112,
-     220,   220,   121,    77,    77,   136,   -53,   -53,    77,    77,
-      77,    77,   -53,    77,    77,    77,    77,   128,    77,   196,
-     -53,   -53,   151,   118,   -53,   166,   181,   -53,   245,   220,
-     220,   220,   196,   241,   226,   211,   -53,    90,    77,   -53,
-      42,    42,   -53,   -53,   113,   -53,    42,   -53
+      13,   -55,     7,    15,    85,    13,    19,   -55,    33,    45,
+     -55,   -55,   -55,   -55,    23,   -55,    80,    -3,    12,    13,
+       0,   -55,    89,    68,    78,    13,   -55,    89,    82,    13,
+     -55,    89,    87,    97,   -55,   -55,    86,    88,   -55,    36,
+      30,   100,   102,   -55,   -55,    91,   -55,    13,   -55,   -55,
+      55,   -55,   -55,   101,    79,    79,    79,   107,   110,    79,
+     -55,   104,    36,   125,    79,   -55,    89,   -55,   -55,   -55,
+      73,   117,    -4,    -4,   140,    79,    79,   155,   -55,   -55,
+      79,    79,    79,    79,   -55,    79,    79,    79,    79,   116,
+      96,   215,   -55,   -55,   170,   122,   -55,   185,   200,   -55,
+     264,    -4,    -4,    -4,   215,   260,   245,   230,   -55,    83,
+     109,    79,   -55,    44,    44,   -55,   -55,   -55,   118,   -55,
+      44,   -55
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -669,33 +678,34 @@ static const yytype_int16 yypact[] =
 static const yytype_int8 yydefact[] =
 {
        5,    11,    16,     0,     0,     5,     0,    12,    17,     0,
-      14,     1,     3,     4,    18,     7,     0,     9,     0,    37,
-       0,     6,     0,     0,     0,    37,     8,     0,     0,    37,
-      21,     0,     0,    23,    18,    10,     0,    26,     0,    41,
-       0,    39,    13,    36,    24,    20,     0,    19,     0,    59,
-      60,    58,     0,     0,     0,     0,     0,     0,    30,     0,
-       0,     0,     0,    38,     0,    22,    35,    61,     0,     0,
-      52,    53,     0,     0,     0,     0,    25,    27,     0,     0,
-       0,     0,    29,     0,     0,     0,     0,     0,     0,    42,
-      40,    55,    63,     0,    51,     0,     0,    31,    47,    48,
-      49,    50,    43,    46,    44,    45,    57,     0,     0,    54,
-       0,     0,    56,    62,    32,    34,     0,    33
+      14,     1,     3,     4,    18,     7,     0,     9,     0,    38,
+       0,     6,     0,     0,     0,    38,     8,     0,     0,    38,
+      22,     0,     0,    24,    18,    10,     0,     0,    27,     0,
+      42,     0,    40,    13,    37,    25,    21,     0,    20,    19,
+       0,    60,    61,    59,     0,     0,     0,     0,     0,     0,
+      31,     0,     0,     0,     0,    39,     0,    23,    36,    62,
+       0,     0,    53,    54,     0,     0,     0,     0,    26,    28,
+       0,     0,     0,     0,    30,     0,     0,     0,     0,     0,
+       0,    43,    41,    56,    65,     0,    52,     0,     0,    32,
+      48,    49,    50,    51,    44,    47,    45,    46,    58,     0,
+       0,     0,    55,     0,     0,    63,    57,    64,    33,    35,
+       0,    34
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int16 yypgoto[] =
 {
-     -53,   -53,   143,   -53,   131,     3,   -53,   -53,   -53,   -20,
-     -53,   109,   -53,   138,   108,   -27,    23,   -53,    98,   -53,
-     -52,    62
+     -55,   -55,   139,   -55,   129,     3,   -55,   -55,   -55,   -20,
+     -55,   105,   -55,   141,    95,   -25,    29,   -55,   106,   -55,
+     -54,    56
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
       -1,     3,     4,     5,    16,    27,     7,     9,    10,    17,
-      18,    32,    33,    58,    59,    60,    28,    29,    40,    41,
-      61,    93
+      18,    32,    33,    60,    61,    62,    28,    29,    41,    42,
+      63,    95
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -703,64 +713,68 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      70,    71,    72,     6,    66,    75,     1,    39,     6,    14,
-      89,    44,     8,    67,    11,    15,    92,    37,    24,   -15,
-      30,    95,    96,    31,    19,     2,    98,    99,   100,   101,
-      20,   102,   103,   104,   105,    48,   107,    49,    50,    51,
-      25,    21,    52,    48,    39,    49,    50,    51,    38,    31,
-      52,    53,    43,    54,     1,    22,    92,    25,   -28,    53,
-      55,    54,    56,    57,    23,    25,    -2,    12,    55,    62,
-      56,    57,    69,     2,    49,    50,    51,    23,    69,    52,
-      49,    50,    51,   114,   115,    52,    34,    36,    53,   117,
-      54,    91,    37,    42,    53,    45,    54,    78,    79,    80,
-      81,    46,    47,    83,    84,    85,    86,    63,    87,    64,
-      68,    88,   112,    78,    79,    80,    81,    82,    73,    83,
-      84,    85,    86,    23,    87,    76,    74,    88,    78,    79,
-      80,    81,    67,   106,    83,    84,    85,    86,   109,    87,
-     116,    94,    88,    78,    79,    80,    81,    97,    13,    83,
-      84,    85,    86,    35,    87,    65,    26,    88,    78,    79,
-      80,    81,    90,   108,    83,    84,    85,    86,    77,    87,
-     113,     0,    88,    78,    79,    80,    81,     0,     0,    83,
-      84,    85,    86,     0,    87,     0,   110,    88,    78,    79,
-      80,    81,     0,     0,    83,    84,    85,    86,     0,    87,
-       0,   111,    88,    78,    79,    80,    81,     0,     0,    83,
-      84,    85,    86,     0,    87,     0,     0,    88,    78,    79,
-      80,    81,     0,     0,     0,    84,    85,     0,    79,    87,
-       0,     0,    88,    78,    79,    80,    81,     0,    87,     0,
-      84,    88,     0,     0,    87,     0,     0,    88,    78,    79,
-      80,    81,     0,    79,    80,    81,     0,     0,     0,    87,
-       0,     0,    88,    87,     0,     0,    88
+      72,    73,    74,     6,    81,    77,     1,    40,     6,    22,
+      91,    45,     8,    24,    89,    11,    94,    90,    23,     1,
+      30,    97,    98,    31,    14,     2,   100,   101,   102,   103,
+      15,   104,   105,   106,   107,    25,   110,    50,     2,    51,
+      52,    53,    20,    64,    54,    50,    40,    51,    52,    53,
+      31,    23,    54,    55,    39,    56,   -15,    94,    44,    25,
+     -29,    55,    57,    56,    58,    59,    68,    25,    19,    36,
+      57,    37,    58,    59,    71,    69,    51,    52,    53,    38,
+      71,    54,    51,    52,    53,    -2,    12,    54,   118,   119,
+      55,    21,    56,    93,    34,   121,    55,   109,    56,    51,
+      52,    53,    38,    69,    54,   115,    43,    46,    48,    47,
+      49,    65,    23,    55,    66,    56,    80,    81,    82,    83,
+      70,   108,    85,    86,    87,    88,    75,    89,    78,    76,
+      90,   116,    80,    81,    82,    83,    84,    69,    85,    86,
+      87,    88,   112,    89,    13,   120,    90,    80,    81,    82,
+      83,    35,    67,    85,    86,    87,    88,    79,    89,    26,
+      96,    90,    80,    81,    82,    83,    99,   117,    85,    86,
+      87,    88,    92,    89,     0,     0,    90,    80,    81,    82,
+      83,     0,   111,    85,    86,    87,    88,     0,    89,     0,
+       0,    90,    80,    81,    82,    83,     0,     0,    85,    86,
+      87,    88,     0,    89,     0,   113,    90,    80,    81,    82,
+      83,     0,     0,    85,    86,    87,    88,     0,    89,     0,
+     114,    90,    80,    81,    82,    83,     0,     0,    85,    86,
+      87,    88,     0,    89,     0,     0,    90,    80,    81,    82,
+      83,     0,     0,     0,    86,    87,     0,     0,    89,     0,
+       0,    90,    80,    81,    82,    83,     0,     0,     0,    86,
+       0,     0,     0,    89,     0,     0,    90,    80,    81,    82,
+      83,     0,    81,    82,    83,     0,     0,     0,    89,     0,
+       0,    90,    89,     0,     0,    90
 };
 
 static const yytype_int8 yycheck[] =
 {
-      52,    53,    54,     0,    11,    57,     6,    27,     5,     5,
-      62,    31,     5,    20,     0,    11,    68,    24,     1,    23,
-      20,    73,    74,    20,    23,    25,    78,    79,    80,    81,
-      19,    83,    84,    85,    86,     1,    88,     3,     4,     5,
-      23,    11,     8,     1,    64,     3,     4,     5,    25,    46,
-       8,    17,    29,    19,     6,    12,   108,    23,    24,    17,
-      26,    19,    28,    29,    21,    23,     0,     1,    26,    13,
-      28,    29,     1,    25,     3,     4,     5,    21,     1,     8,
-       3,     4,     5,   110,   111,     8,     5,     3,    17,   116,
-      19,    20,    24,    24,    17,    20,    19,     7,     8,     9,
-      10,    12,    22,    13,    14,    15,    16,    11,    18,    12,
-      19,    21,    22,     7,     8,     9,    10,    11,    19,    13,
-      14,    15,    16,    21,    18,    24,    19,    21,     7,     8,
-       9,    10,    20,     5,    13,    14,    15,    16,    20,    18,
-      27,    20,    21,     7,     8,     9,    10,    11,     5,    13,
-      14,    15,    16,    22,    18,    46,    18,    21,     7,     8,
-       9,    10,    64,    12,    13,    14,    15,    16,    60,    18,
-     108,    -1,    21,     7,     8,     9,    10,    -1,    -1,    13,
-      14,    15,    16,    -1,    18,    -1,    20,    21,     7,     8,
-       9,    10,    -1,    -1,    13,    14,    15,    16,    -1,    18,
-      -1,    20,    21,     7,     8,     9,    10,    -1,    -1,    13,
-      14,    15,    16,    -1,    18,    -1,    -1,    21,     7,     8,
-       9,    10,    -1,    -1,    -1,    14,    15,    -1,     8,    18,
-      -1,    -1,    21,     7,     8,     9,    10,    -1,    18,    -1,
-      14,    21,    -1,    -1,    18,    -1,    -1,    21,     7,     8,
-       9,    10,    -1,     8,     9,    10,    -1,    -1,    -1,    18,
-      -1,    -1,    21,    18,    -1,    -1,    21
+      54,    55,    56,     0,     8,    59,     6,    27,     5,    12,
+      64,    31,     5,     1,    18,     0,    70,    21,    21,     6,
+      20,    75,    76,    20,     5,    25,    80,    81,    82,    83,
+      11,    85,    86,    87,    88,    23,    90,     1,    25,     3,
+       4,     5,    19,    13,     8,     1,    66,     3,     4,     5,
+      47,    21,     8,    17,    25,    19,    23,   111,    29,    23,
+      24,    17,    26,    19,    28,    29,    11,    23,    23,     1,
+      26,     3,    28,    29,     1,    20,     3,     4,     5,    24,
+       1,     8,     3,     4,     5,     0,     1,     8,   113,   114,
+      17,    11,    19,    20,     5,   120,    17,     1,    19,     3,
+       4,     5,    24,    20,     8,    22,    24,    20,    22,    12,
+      22,    11,    21,    17,    12,    19,     7,     8,     9,    10,
+      19,     5,    13,    14,    15,    16,    19,    18,    24,    19,
+      21,    22,     7,     8,     9,    10,    11,    20,    13,    14,
+      15,    16,    20,    18,     5,    27,    21,     7,     8,     9,
+      10,    22,    47,    13,    14,    15,    16,    62,    18,    18,
+      20,    21,     7,     8,     9,    10,    11,   111,    13,    14,
+      15,    16,    66,    18,    -1,    -1,    21,     7,     8,     9,
+      10,    -1,    12,    13,    14,    15,    16,    -1,    18,    -1,
+      -1,    21,     7,     8,     9,    10,    -1,    -1,    13,    14,
+      15,    16,    -1,    18,    -1,    20,    21,     7,     8,     9,
+      10,    -1,    -1,    13,    14,    15,    16,    -1,    18,    -1,
+      20,    21,     7,     8,     9,    10,    -1,    -1,    13,    14,
+      15,    16,    -1,    18,    -1,    -1,    21,     7,     8,     9,
+      10,    -1,    -1,    -1,    14,    15,    -1,    -1,    18,    -1,
+      -1,    21,     7,     8,     9,    10,    -1,    -1,    -1,    14,
+      -1,    -1,    -1,    18,    -1,    -1,    21,     7,     8,     9,
+      10,    -1,     8,     9,    10,    -1,    -1,    -1,    18,    -1,
+      -1,    21,    18,    -1,    -1,    21
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
@@ -770,15 +784,16 @@ static const yytype_int8 yystos[] =
        0,     6,    25,    32,    33,    34,    36,    37,     5,    38,
       39,     0,     1,    33,     5,    11,    35,    40,    41,    23,
       19,    11,    12,    21,     1,    23,    44,    36,    47,    48,
-      20,    36,    42,    43,     5,    35,     3,    24,    47,    40,
-      49,    50,    24,    47,    40,    20,    12,    22,     1,     3,
-       4,     5,     8,    17,    19,    26,    28,    29,    44,    45,
-      46,    51,    13,    11,    12,    42,    11,    20,    19,     1,
-      51,    51,    51,    19,    19,    51,    24,    45,     7,     8,
-       9,    10,    11,    13,    14,    15,    16,    18,    21,    51,
-      49,    20,    51,    52,    20,    51,    51,    11,    51,    51,
-      51,    51,    51,    51,    51,    51,     5,    51,    12,    20,
-      20,    20,    22,    52,    46,    46,    27,    46
+      20,    36,    42,    43,     5,    35,     1,     3,    24,    47,
+      40,    49,    50,    24,    47,    40,    20,    12,    22,    22,
+       1,     3,     4,     5,     8,    17,    19,    26,    28,    29,
+      44,    45,    46,    51,    13,    11,    12,    42,    11,    20,
+      19,     1,    51,    51,    51,    19,    19,    51,    24,    45,
+       7,     8,     9,    10,    11,    13,    14,    15,    16,    18,
+      21,    51,    49,    20,    51,    52,    20,    51,    51,    11,
+      51,    51,    51,    51,    51,    51,    51,    51,     5,     1,
+      51,    12,    20,    20,    20,    22,    22,    52,    46,    46,
+      27,    46
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
@@ -786,11 +801,11 @@ static const yytype_int8 yyr1[] =
 {
        0,    31,    32,    32,    33,    33,    34,    34,    34,    35,
       35,    36,    36,    37,    37,    38,    38,    39,    40,    40,
-      41,    41,    42,    42,    43,    44,    44,    45,    45,    46,
-      46,    46,    46,    46,    46,    46,    47,    47,    48,    49,
-      49,    50,    50,    51,    51,    51,    51,    51,    51,    51,
+      40,    41,    41,    42,    42,    43,    44,    44,    45,    45,
+      46,    46,    46,    46,    46,    46,    46,    47,    47,    48,
+      49,    49,    50,    50,    51,    51,    51,    51,    51,    51,
       51,    51,    51,    51,    51,    51,    51,    51,    51,    51,
-      51,    51,    52,    52
+      51,    51,    51,    51,    52,    52
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
@@ -798,11 +813,11 @@ static const yytype_int8 yyr2[] =
 {
        0,     2,     1,     2,     2,     0,     3,     2,     3,     1,
        3,     1,     1,     5,     2,     1,     0,     1,     1,     4,
-       4,     3,     3,     1,     2,     4,     2,     2,     0,     2,
-       1,     3,     5,     7,     5,     2,     2,     0,     3,     1,
-       3,     1,     3,     3,     3,     3,     3,     3,     3,     3,
-       3,     3,     2,     2,     4,     3,     4,     3,     1,     1,
-       1,     2,     3,     1
+       4,     4,     3,     3,     1,     2,     4,     2,     2,     0,
+       2,     1,     3,     5,     7,     5,     2,     2,     0,     3,
+       1,     3,     1,     3,     3,     3,     3,     3,     3,     3,
+       3,     3,     3,     2,     2,     4,     3,     4,     3,     1,
+       1,     1,     2,     4,     3,     1
 };
 
 
@@ -1593,43 +1608,55 @@ yyreduce:
   switch (yyn)
     {
   case 2:
-#line 93 "syntax.y"
+#line 101 "syntax.y"
                      {
             (yyval.type_node) = MakeNode("Program", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
             Root = (yyval.type_node);
             MakeTree((yyval.type_node), (yyvsp[0].type_node));
+            //printf("[Program]:\n");
+            //PrintTree(debugger, 0);
           }
-#line 1604 "syntax.tab.c"
+#line 1621 "syntax.tab.c"
     break;
 
   case 3:
-#line 99 "syntax.y"
+#line 109 "syntax.y"
                            {
-            
+             if (PrintError('B', (yylsp[0]).first_line, "Error in Program")){
+                struct Node* errorNode = MakeNode("ERROR", Noval, (yylsp[0]).first_line);
+                errorNode->valtype = NoneType;
+                (yyval.type_node) = MakeNode("Program", Expression, (yyloc).first_line);
+                (yyval.type_node)->valtype = NoneType;
+                MakeTree((yyval.type_node), (yyvsp[-1].type_node));
+                MakeTree((yyval.type_node), errorNode);
+             }
+             else{
+                (yyval.type_node) = NULL;
+             }
           }
-#line 1612 "syntax.tab.c"
+#line 1639 "syntax.tab.c"
     break;
 
   case 4:
-#line 104 "syntax.y"
+#line 124 "syntax.y"
                                {
                 (yyval.type_node) = MakeNode("ExtDefList", Expression, (yyloc).first_line);
                 (yyval.type_node)->valtype = NoneType;
                 MakeTree((yyval.type_node), (yyvsp[-1].type_node));
                 MakeTree((yyval.type_node), (yyvsp[0].type_node));
              }
-#line 1623 "syntax.tab.c"
+#line 1650 "syntax.tab.c"
     break;
 
   case 5:
-#line 110 "syntax.y"
+#line 130 "syntax.y"
              {(yyval.type_node) = NULL;}
-#line 1629 "syntax.tab.c"
+#line 1656 "syntax.tab.c"
     break;
 
   case 6:
-#line 113 "syntax.y"
+#line 133 "syntax.y"
                                   {
             (yyval.type_node) = MakeNode("ExtDef", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
@@ -1639,11 +1666,11 @@ yyreduce:
             MakeTree((yyval.type_node), (yyvsp[-1].type_node));
             MakeTree((yyval.type_node), seminode);
          }
-#line 1643 "syntax.tab.c"
+#line 1670 "syntax.tab.c"
     break;
 
   case 7:
-#line 122 "syntax.y"
+#line 142 "syntax.y"
                        {
             (yyval.type_node) = MakeNode("ExtDef", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
@@ -1652,11 +1679,11 @@ yyreduce:
             MakeTree((yyval.type_node), (yyvsp[-1].type_node));
             MakeTree((yyval.type_node), seminode);
          }
-#line 1656 "syntax.tab.c"
+#line 1683 "syntax.tab.c"
     break;
 
   case 8:
-#line 130 "syntax.y"
+#line 150 "syntax.y"
                                 {
             (yyval.type_node) = MakeNode("ExtDef", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
@@ -1664,21 +1691,21 @@ yyreduce:
             MakeTree((yyval.type_node), (yyvsp[-1].type_node));
             MakeTree((yyval.type_node), (yyvsp[0].type_node));
          }
-#line 1668 "syntax.tab.c"
+#line 1695 "syntax.tab.c"
     break;
 
   case 9:
-#line 139 "syntax.y"
+#line 159 "syntax.y"
                    {
                 (yyval.type_node) = MakeNode("ExtDecList", Expression, (yyloc).first_line);
                 (yyval.type_node)->valtype = NoneType;
                 MakeTree((yyval.type_node), (yyvsp[0].type_node));
              }
-#line 1678 "syntax.tab.c"
+#line 1705 "syntax.tab.c"
     break;
 
   case 10:
-#line 144 "syntax.y"
+#line 164 "syntax.y"
                                     {
                 (yyval.type_node) = MakeNode("ExtDecList", Expression, (yyloc).first_line);
                 (yyval.type_node)->valtype = NoneType;
@@ -1688,33 +1715,34 @@ yyreduce:
                 MakeTree((yyval.type_node), commanode);
                 MakeTree((yyval.type_node), (yyvsp[0].type_node));
              }
-#line 1692 "syntax.tab.c"
+#line 1719 "syntax.tab.c"
     break;
 
   case 11:
-#line 155 "syntax.y"
+#line 175 "syntax.y"
                 {
                 (yyval.type_node) = MakeNode("Specifier", Expression, (yyloc).first_line);
+                (yyval.type_node)->valtype = NoneType;
                 struct Node* typenode = MakeNode("TYPE", Val, (yylsp[0]).first_line);
                 typenode->valtype = StringType;
                 strcpy(typenode->strval, (yyvsp[0].type_string));
                 MakeTree((yyval.type_node), typenode);
             }
-#line 1704 "syntax.tab.c"
+#line 1732 "syntax.tab.c"
     break;
 
   case 12:
-#line 162 "syntax.y"
+#line 183 "syntax.y"
                            {
                 (yyval.type_node) = MakeNode("Specifier", Expression, (yyloc).first_line);
                 (yyval.type_node)->valtype = NoneType;
                 MakeTree((yyval.type_node), (yyvsp[0].type_node));
             }
-#line 1714 "syntax.tab.c"
+#line 1742 "syntax.tab.c"
     break;
 
   case 13:
-#line 169 "syntax.y"
+#line 190 "syntax.y"
                                              {
                     (yyval.type_node) = MakeNode("StructSpecifier", Expression, (yyloc).first_line);
                     (yyval.type_node)->valtype = NoneType;
@@ -1730,11 +1758,11 @@ yyreduce:
                     MakeTree((yyval.type_node), (yyvsp[-1].type_node));
                     MakeTree((yyval.type_node), rcnode);
                   }
-#line 1734 "syntax.tab.c"
+#line 1762 "syntax.tab.c"
     break;
 
   case 14:
-#line 184 "syntax.y"
+#line 205 "syntax.y"
                             {
                     (yyval.type_node) = MakeNode("StructSpecifier", Expression, (yyloc).first_line);
                     (yyval.type_node)->valtype = NoneType;
@@ -1743,11 +1771,11 @@ yyreduce:
                     MakeTree((yyval.type_node), structnode);
                     MakeTree((yyval.type_node), (yyvsp[0].type_node));
                   }
-#line 1747 "syntax.tab.c"
+#line 1775 "syntax.tab.c"
     break;
 
   case 15:
-#line 194 "syntax.y"
+#line 215 "syntax.y"
            {
             (yyval.type_node) = MakeNode("OptTag", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
@@ -1756,17 +1784,17 @@ yyreduce:
             strcpy(idnode->strval, (yyvsp[0].type_string));
             MakeTree((yyval.type_node), idnode);
          }
-#line 1760 "syntax.tab.c"
+#line 1788 "syntax.tab.c"
     break;
 
   case 16:
-#line 202 "syntax.y"
+#line 223 "syntax.y"
          { (yyval.type_node) = NULL; }
-#line 1766 "syntax.tab.c"
+#line 1794 "syntax.tab.c"
     break;
 
   case 17:
-#line 205 "syntax.y"
+#line 226 "syntax.y"
         {
         (yyval.type_node) = MakeNode("Tag", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -1775,11 +1803,11 @@ yyreduce:
         strcpy(idnode->strval, (yyvsp[0].type_string));
         MakeTree((yyval.type_node), idnode);
       }
-#line 1779 "syntax.tab.c"
+#line 1807 "syntax.tab.c"
     break;
 
   case 18:
-#line 215 "syntax.y"
+#line 236 "syntax.y"
            {
             (yyval.type_node) = MakeNode("VarDec", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
@@ -1788,11 +1816,11 @@ yyreduce:
             strcpy(idnode->strval, (yyvsp[0].type_string));
             MakeTree((yyval.type_node), idnode);
          }
-#line 1792 "syntax.tab.c"
+#line 1820 "syntax.tab.c"
     break;
 
   case 19:
-#line 223 "syntax.y"
+#line 244 "syntax.y"
                          {
             (yyval.type_node) = MakeNode("VarDec", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
@@ -1808,11 +1836,35 @@ yyreduce:
             MakeTree((yyval.type_node), intnode);
             MakeTree((yyval.type_node), rbnode);
          }
-#line 1812 "syntax.tab.c"
+#line 1840 "syntax.tab.c"
     break;
 
   case 20:
-#line 240 "syntax.y"
+#line 259 "syntax.y"
+                           {
+            if (PrintError('B', (yylsp[-1]).first_line, "Error in VarDec: List Error")){
+                struct Node* errorNode = MakeNode("ERROR", Noval, (yylsp[-1]).first_line);
+                errorNode->valtype = NoneType;
+                (yyval.type_node) = MakeNode("VarDec", Expression, (yyloc).first_line);
+                (yyval.type_node)->valtype = NoneType;
+                struct Node* lbNode = MakeNode("LB", Noval, (yylsp[-2]).first_line);
+                lbNode->valtype = NoneType;
+                struct Node* rbNode = MakeNode("RB", Noval, (yylsp[0]).first_line);
+                rbNode->valtype = NoneType;
+                MakeTree((yyval.type_node), (yyvsp[-3].type_node));
+                MakeTree((yyval.type_node), lbNode);
+                MakeTree((yyval.type_node), errorNode);
+                MakeTree((yyval.type_node), rbNode);
+            }
+            else{
+                (yyval.type_node) = NULL;
+            }
+         }
+#line 1864 "syntax.tab.c"
+    break;
+
+  case 21:
+#line 280 "syntax.y"
                          {
            (yyval.type_node) = MakeNode("FunDec", Expression, (yyloc).first_line);
            (yyval.type_node)->valtype = NoneType;
@@ -1828,11 +1880,11 @@ yyreduce:
            MakeTree((yyval.type_node), (yyvsp[-1].type_node));
            MakeTree((yyval.type_node), rpnode);
          }
-#line 1832 "syntax.tab.c"
+#line 1884 "syntax.tab.c"
     break;
 
-  case 21:
-#line 255 "syntax.y"
+  case 22:
+#line 295 "syntax.y"
                  {
             (yyval.type_node) = MakeNode("FunDec", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
@@ -1847,11 +1899,11 @@ yyreduce:
             MakeTree((yyval.type_node), lpnode);
             MakeTree((yyval.type_node), rpnode);
          }
-#line 1851 "syntax.tab.c"
+#line 1903 "syntax.tab.c"
     break;
 
-  case 22:
-#line 271 "syntax.y"
+  case 23:
+#line 311 "syntax.y"
                                 {
             (yyval.type_node) = MakeNode("VarList", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
@@ -1861,32 +1913,32 @@ yyreduce:
             MakeTree((yyval.type_node), commanode);
             MakeTree((yyval.type_node), (yyvsp[0].type_node));
           }
-#line 1865 "syntax.tab.c"
+#line 1917 "syntax.tab.c"
     break;
 
-  case 23:
-#line 280 "syntax.y"
+  case 24:
+#line 320 "syntax.y"
                   {
             (yyval.type_node) = MakeNode("VarList", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
             MakeTree((yyval.type_node), (yyvsp[0].type_node));
           }
-#line 1875 "syntax.tab.c"
+#line 1927 "syntax.tab.c"
     break;
 
-  case 24:
-#line 287 "syntax.y"
+  case 25:
+#line 327 "syntax.y"
                            {
             (yyval.type_node) = MakeNode("ParamDec", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
             MakeTree((yyval.type_node), (yyvsp[-1].type_node));
             MakeTree((yyval.type_node), (yyvsp[0].type_node));
            }
-#line 1886 "syntax.tab.c"
+#line 1938 "syntax.tab.c"
     break;
 
-  case 25:
-#line 295 "syntax.y"
+  case 26:
+#line 335 "syntax.y"
                                {
             (yyval.type_node) = MakeNode("CompSt", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
@@ -1894,41 +1946,57 @@ yyreduce:
             lcnode->valtype = NoneType;
             struct Node* rcnode = MakeNode("RC", Noval, (yylsp[0]).first_line);
             rcnode->valtype = NoneType;
+            //printf("[CompSt]:\n");
+            //PrintTree(debugger, 0);
             MakeTree((yyval.type_node), lcnode);
             MakeTree((yyval.type_node), (yyvsp[-2].type_node));
             MakeTree((yyval.type_node), (yyvsp[-1].type_node));
             MakeTree((yyval.type_node), rcnode);
+            //printf("[CompSt]:\n");
+            //PrintTree(debugger, 0);
          }
-#line 1903 "syntax.tab.c"
-    break;
-
-  case 26:
-#line 307 "syntax.y"
-                 {
-            
-         }
-#line 1911 "syntax.tab.c"
+#line 1959 "syntax.tab.c"
     break;
 
   case 27:
-#line 312 "syntax.y"
+#line 351 "syntax.y"
+                 {
+            if (PrintError('B', (yylsp[-1]).first_line, "Error in Compst")){
+                struct Node* errorNode = MakeNode("ERROR", Noval, (yylsp[-1]).first_line);
+                errorNode->valtype = NoneType;
+                (yyval.type_node) = MakeNode("CompSt", Expression, (yyloc).first_line);
+                (yyval.type_node)->valtype = NoneType;
+                struct Node* rcNode = MakeNode("RC", Noval, (yylsp[0]).first_line);
+                rcNode->valtype = NoneType;
+                MakeTree((yyval.type_node), errorNode);
+                MakeTree((yyval.type_node), rcNode);
+            }
+            else{
+                (yyval.type_node) = NULL;
+            }
+         }
+#line 1979 "syntax.tab.c"
+    break;
+
+  case 28:
+#line 368 "syntax.y"
                         {
             (yyval.type_node) = MakeNode("StmtList", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
             MakeTree((yyval.type_node), (yyvsp[-1].type_node));
             MakeTree((yyval.type_node), (yyvsp[0].type_node));
            }
-#line 1922 "syntax.tab.c"
-    break;
-
-  case 28:
-#line 318 "syntax.y"
-           { (yyval.type_node) = NULL; }
-#line 1928 "syntax.tab.c"
+#line 1990 "syntax.tab.c"
     break;
 
   case 29:
-#line 321 "syntax.y"
+#line 374 "syntax.y"
+           { (yyval.type_node) = NULL; }
+#line 1996 "syntax.tab.c"
+    break;
+
+  case 30:
+#line 377 "syntax.y"
                {
         (yyval.type_node) = MakeNode("Stmt", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -1937,21 +2005,21 @@ yyreduce:
         MakeTree((yyval.type_node), (yyvsp[-1].type_node));
         MakeTree((yyval.type_node), seminode);
        }
-#line 1941 "syntax.tab.c"
+#line 2009 "syntax.tab.c"
     break;
 
-  case 30:
-#line 329 "syntax.y"
+  case 31:
+#line 385 "syntax.y"
              {
         (yyval.type_node) = MakeNode("Stmt", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
        }
-#line 1951 "syntax.tab.c"
+#line 2019 "syntax.tab.c"
     break;
 
-  case 31:
-#line 334 "syntax.y"
+  case 32:
+#line 390 "syntax.y"
                       {
         (yyval.type_node) = MakeNode("Stmt", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -1963,11 +2031,11 @@ yyreduce:
         MakeTree((yyval.type_node), (yyvsp[-1].type_node));
         MakeTree((yyval.type_node), seminode);
        }
-#line 1967 "syntax.tab.c"
+#line 2035 "syntax.tab.c"
     break;
 
-  case 32:
-#line 345 "syntax.y"
+  case 33:
+#line 401 "syntax.y"
                                          {
         (yyval.type_node) = MakeNode("Stmt", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -1983,11 +2051,11 @@ yyreduce:
         MakeTree((yyval.type_node), rpnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
        }
-#line 1987 "syntax.tab.c"
+#line 2055 "syntax.tab.c"
     break;
 
-  case 33:
-#line 360 "syntax.y"
+  case 34:
+#line 416 "syntax.y"
                                   {
         (yyval.type_node) = MakeNode("Stmt", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2007,11 +2075,11 @@ yyreduce:
         MakeTree((yyval.type_node), elsenode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
        }
-#line 2011 "syntax.tab.c"
+#line 2079 "syntax.tab.c"
     break;
 
-  case 34:
-#line 379 "syntax.y"
+  case 35:
+#line 435 "syntax.y"
                            {
         (yyval.type_node) = MakeNode("Stmt", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2027,62 +2095,88 @@ yyreduce:
         MakeTree((yyval.type_node), rpnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
        }
-#line 2031 "syntax.tab.c"
-    break;
-
-  case 35:
-#line 394 "syntax.y"
-                 {
-       
-       }
-#line 2039 "syntax.tab.c"
+#line 2099 "syntax.tab.c"
     break;
 
   case 36:
-#line 399 "syntax.y"
-                     {
-            (yyval.type_node) = MakeNode("DefList", Expression, (yyloc).first_line);
+#line 450 "syntax.y"
+                 {
+        if (PrintError('B', (yylsp[-1]).first_line, "Error in Stmt")){
+            struct Node* errorNode = MakeNode("ERROR", Noval, (yylsp[-1]).first_line);
+            errorNode->valtype = NoneType;
+            (yyval.type_node) = MakeNode("Stmt", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
-            struct Node* defnode = MakeNode("Def", Noval, (yylsp[-1]).first_line);
-            defnode->valtype = NoneType;
-            MakeTree((yyval.type_node), defnode);
-            MakeTree((yyval.type_node), (yyvsp[0].type_node));
-          }
-#line 2052 "syntax.tab.c"
+            struct Node* semiNode = MakeNode("SEMI", Noval, (yylsp[0]).first_line);
+            semiNode->valtype = NoneType;
+            MakeTree((yyval.type_node), errorNode);
+            MakeTree((yyval.type_node), semiNode);
+        }
+        else{
+            (yyval.type_node) = NULL;
+        }
+       }
+#line 2119 "syntax.tab.c"
     break;
 
   case 37:
-#line 407 "syntax.y"
-          { (yyval.type_node) = NULL; }
-#line 2058 "syntax.tab.c"
+#line 467 "syntax.y"
+                     {
+            (yyval.type_node) = MakeNode("DefList", Expression, (yyloc).first_line);
+            (yyval.type_node)->valtype = NoneType;
+            //printf("[DefList]:\n");
+            //PrintTree(debugger, 0);
+            MakeTree((yyval.type_node), (yyvsp[-1].type_node));
+            MakeTree((yyval.type_node), (yyvsp[0].type_node));
+            //debugger = $$;
+            //printf("[DefList]:\n");
+            //PrintTree($1, 0);
+            //PrintTree(debugger, 0);
+          }
+#line 2136 "syntax.tab.c"
     break;
 
   case 38:
-#line 410 "syntax.y"
+#line 479 "syntax.y"
+          { (yyval.type_node) = NULL; }
+#line 2142 "syntax.tab.c"
+    break;
+
+  case 39:
+#line 482 "syntax.y"
                             {
         (yyval.type_node) = MakeNode("Def", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
         struct Node* seminode = MakeNode("SEMI", Noval, (yylsp[0]).first_line);
         seminode->valtype = NoneType;
+        /*
+        if ($1 != NULL)
+            printf("[Def]$1 %s\n", $1->name);
+        if ($2 != NULL)
+            printf("[Def]$2 %s\n", $2->name);
+        */
         MakeTree((yyval.type_node), (yyvsp[-2].type_node));
+        //printf("[Def]child %s\n", $$->leftchild->name);
         MakeTree((yyval.type_node), (yyvsp[-1].type_node));
         MakeTree((yyval.type_node), seminode);
+        //printf("[Def]:\n");
+        //PrintTree($$, 0);
+        debugger2 = (yyval.type_node);
       }
-#line 2072 "syntax.tab.c"
+#line 2166 "syntax.tab.c"
     break;
 
-  case 39:
-#line 421 "syntax.y"
+  case 40:
+#line 503 "syntax.y"
              {
             (yyval.type_node) = MakeNode("DecList", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
             MakeTree((yyval.type_node), (yyvsp[0].type_node));
           }
-#line 2082 "syntax.tab.c"
+#line 2176 "syntax.tab.c"
     break;
 
-  case 40:
-#line 426 "syntax.y"
+  case 41:
+#line 508 "syntax.y"
                            {
             (yyval.type_node) = MakeNode("DecList", Expression, (yyloc).first_line);
             (yyval.type_node)->valtype = NoneType;
@@ -2092,21 +2186,21 @@ yyreduce:
             MakeTree((yyval.type_node), commanode);
             MakeTree((yyval.type_node), (yyvsp[0].type_node));
           }
-#line 2096 "syntax.tab.c"
+#line 2190 "syntax.tab.c"
     break;
 
-  case 41:
-#line 437 "syntax.y"
+  case 42:
+#line 519 "syntax.y"
             {
         (yyval.type_node) = MakeNode("Dec", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2106 "syntax.tab.c"
+#line 2200 "syntax.tab.c"
     break;
 
-  case 42:
-#line 442 "syntax.y"
+  case 43:
+#line 524 "syntax.y"
                          {
         (yyval.type_node) = MakeNode("Dec", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2116,11 +2210,11 @@ yyreduce:
         MakeTree((yyval.type_node), assnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2120 "syntax.tab.c"
+#line 2214 "syntax.tab.c"
     break;
 
-  case 43:
-#line 453 "syntax.y"
+  case 44:
+#line 535 "syntax.y"
                       {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2130,11 +2224,11 @@ yyreduce:
         MakeTree((yyval.type_node), assnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2134 "syntax.tab.c"
+#line 2228 "syntax.tab.c"
     break;
 
-  case 44:
-#line 462 "syntax.y"
+  case 45:
+#line 544 "syntax.y"
                  {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2144,11 +2238,11 @@ yyreduce:
         MakeTree((yyval.type_node), andnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2148 "syntax.tab.c"
+#line 2242 "syntax.tab.c"
     break;
 
-  case 45:
-#line 471 "syntax.y"
+  case 46:
+#line 553 "syntax.y"
                 {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2158,11 +2252,11 @@ yyreduce:
         MakeTree((yyval.type_node), ornode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2162 "syntax.tab.c"
+#line 2256 "syntax.tab.c"
     break;
 
-  case 46:
-#line 480 "syntax.y"
+  case 47:
+#line 562 "syntax.y"
                    {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2172,11 +2266,11 @@ yyreduce:
         MakeTree((yyval.type_node), relopnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2176 "syntax.tab.c"
+#line 2270 "syntax.tab.c"
     break;
 
-  case 47:
-#line 489 "syntax.y"
+  case 48:
+#line 571 "syntax.y"
                   {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2186,11 +2280,11 @@ yyreduce:
         MakeTree((yyval.type_node), plusnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2190 "syntax.tab.c"
+#line 2284 "syntax.tab.c"
     break;
 
-  case 48:
-#line 498 "syntax.y"
+  case 49:
+#line 580 "syntax.y"
                    {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2200,11 +2294,11 @@ yyreduce:
         MakeTree((yyval.type_node), minnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2204 "syntax.tab.c"
+#line 2298 "syntax.tab.c"
     break;
 
-  case 49:
-#line 507 "syntax.y"
+  case 50:
+#line 589 "syntax.y"
                   {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2214,11 +2308,11 @@ yyreduce:
         MakeTree((yyval.type_node), starnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2218 "syntax.tab.c"
+#line 2312 "syntax.tab.c"
     break;
 
-  case 50:
-#line 516 "syntax.y"
+  case 51:
+#line 598 "syntax.y"
                  {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2228,11 +2322,11 @@ yyreduce:
         MakeTree((yyval.type_node), divnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2232 "syntax.tab.c"
+#line 2326 "syntax.tab.c"
     break;
 
-  case 51:
-#line 525 "syntax.y"
+  case 52:
+#line 607 "syntax.y"
                {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2244,11 +2338,11 @@ yyreduce:
         MakeTree((yyval.type_node), (yyvsp[-1].type_node));
         MakeTree((yyval.type_node), rpnode);
       }
-#line 2248 "syntax.tab.c"
+#line 2342 "syntax.tab.c"
     break;
 
-  case 52:
-#line 536 "syntax.y"
+  case 53:
+#line 618 "syntax.y"
                {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2257,11 +2351,11 @@ yyreduce:
         MakeTree((yyval.type_node), minnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2261 "syntax.tab.c"
+#line 2355 "syntax.tab.c"
     break;
 
-  case 53:
-#line 544 "syntax.y"
+  case 54:
+#line 626 "syntax.y"
              {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2270,11 +2364,11 @@ yyreduce:
         MakeTree((yyval.type_node), notnode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
       }
-#line 2274 "syntax.tab.c"
+#line 2368 "syntax.tab.c"
     break;
 
-  case 54:
-#line 552 "syntax.y"
+  case 55:
+#line 634 "syntax.y"
                    {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2290,11 +2384,11 @@ yyreduce:
         MakeTree((yyval.type_node), (yyvsp[-1].type_node));
         MakeTree((yyval.type_node), rpnode);
       }
-#line 2294 "syntax.tab.c"
+#line 2388 "syntax.tab.c"
     break;
 
-  case 55:
-#line 567 "syntax.y"
+  case 56:
+#line 649 "syntax.y"
               {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2309,11 +2403,11 @@ yyreduce:
         MakeTree((yyval.type_node), lpnode);
         MakeTree((yyval.type_node), rpnode);
       }
-#line 2313 "syntax.tab.c"
+#line 2407 "syntax.tab.c"
     break;
 
-  case 56:
-#line 581 "syntax.y"
+  case 57:
+#line 663 "syntax.y"
                    {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2326,11 +2420,11 @@ yyreduce:
         MakeTree((yyval.type_node), (yyvsp[-1].type_node));
         MakeTree((yyval.type_node), rbnode);
       }
-#line 2330 "syntax.tab.c"
+#line 2424 "syntax.tab.c"
     break;
 
-  case 57:
-#line 593 "syntax.y"
+  case 58:
+#line 675 "syntax.y"
                 {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2343,11 +2437,11 @@ yyreduce:
         MakeTree((yyval.type_node), dotnode);
         MakeTree((yyval.type_node), idnode);
       }
-#line 2347 "syntax.tab.c"
+#line 2441 "syntax.tab.c"
     break;
 
-  case 58:
-#line 605 "syntax.y"
+  case 59:
+#line 687 "syntax.y"
         {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2356,11 +2450,11 @@ yyreduce:
         strcpy(idnode->strval, (yyvsp[0].type_string));
         MakeTree((yyval.type_node), idnode);
       }
-#line 2360 "syntax.tab.c"
+#line 2454 "syntax.tab.c"
     break;
 
-  case 59:
-#line 613 "syntax.y"
+  case 60:
+#line 695 "syntax.y"
          {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2369,11 +2463,11 @@ yyreduce:
         intnode->intval = (yyvsp[0].type_int);
         MakeTree((yyval.type_node), intnode);
       }
-#line 2373 "syntax.tab.c"
+#line 2467 "syntax.tab.c"
     break;
 
-  case 60:
-#line 621 "syntax.y"
+  case 61:
+#line 703 "syntax.y"
            {
         (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2382,19 +2476,55 @@ yyreduce:
         flonode->floatval = (yyvsp[0].type_float);
         MakeTree((yyval.type_node), flonode);
       }
-#line 2386 "syntax.tab.c"
-    break;
-
-  case 61:
-#line 629 "syntax.y"
-              {
-      
-      }
-#line 2394 "syntax.tab.c"
+#line 2480 "syntax.tab.c"
     break;
 
   case 62:
-#line 634 "syntax.y"
+#line 711 "syntax.y"
+              {
+        if (PrintError('B', (yylsp[-1]).first_line, "Error in Exp")){
+            struct Node* errorNode = MakeNode("ERROR", Noval, (yylsp[-1]).first_line);
+            errorNode->valtype = NoneType;
+            (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
+            (yyval.type_node)->valtype = NoneType;
+            struct Node* rpNode = MakeNode("RP", Noval, (yylsp[0]).first_line);
+            rpNode->valtype = NoneType;
+            MakeTree((yyval.type_node), errorNode);
+            MakeTree((yyval.type_node), rpNode);
+        }
+        else{
+            (yyval.type_node) = NULL;
+        }
+      }
+#line 2500 "syntax.tab.c"
+    break;
+
+  case 63:
+#line 726 "syntax.y"
+                     {
+        if (PrintError('B', (yylsp[-1]).first_line, "[Exp]: []error")){
+            struct Node* errorNode = MakeNode("ERROR", Noval, (yylsp[-1]).first_line);
+            errorNode->valtype = NoneType;
+            (yyval.type_node) = MakeNode("Exp", Expression, (yyloc).first_line);
+            (yyval.type_node)->valtype = NoneType;
+            struct Node* lbnode = MakeNode("LB", Noval, (yylsp[-2]).first_line);
+            lbnode->valtype = NoneType;
+            struct Node* rbnode = MakeNode("RB", Noval, (yylsp[0]).first_line);
+            rbnode->valtype = NoneType;
+            MakeTree((yyval.type_node), (yyvsp[-3].type_node));
+            MakeTree((yyval.type_node), lbnode);
+            MakeTree((yyval.type_node), errorNode);
+            MakeTree((yyval.type_node), rbnode);
+        }
+        else{
+            (yyval.type_node) = NULL;
+        }
+      }
+#line 2524 "syntax.tab.c"
+    break;
+
+  case 64:
+#line 747 "syntax.y"
                      {
         (yyval.type_node) = MakeNode("Args", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
@@ -2404,21 +2534,21 @@ yyreduce:
         MakeTree((yyval.type_node), commanode);
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
        }
-#line 2408 "syntax.tab.c"
+#line 2538 "syntax.tab.c"
     break;
 
-  case 63:
-#line 643 "syntax.y"
+  case 65:
+#line 756 "syntax.y"
           {
         (yyval.type_node) = MakeNode("Args", Expression, (yyloc).first_line);
         (yyval.type_node)->valtype = NoneType;
         MakeTree((yyval.type_node), (yyvsp[0].type_node));
        }
-#line 2418 "syntax.tab.c"
+#line 2548 "syntax.tab.c"
     break;
 
 
-#line 2422 "syntax.tab.c"
+#line 2552 "syntax.tab.c"
 
       default: break;
     }
@@ -2656,12 +2786,12 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 650 "syntax.y"
+#line 763 "syntax.y"
 
-/*
+
 void yyerror(char* msg){
     
-}*/
+}
 
 /*
 enum Nodetype {
@@ -2710,6 +2840,9 @@ void MakeTree(struct Node* father, struct Node* child){
         return;
     }*/
     //error report
+    
+    if (child == NULL)
+        return;
     
     if (father->leftchild == NULL)
         father->leftchild = child;
@@ -2760,13 +2893,30 @@ void PrintTree(struct Node* rootnode, int spaceNum){
     if (rootnode == NULL)
         return;
     PrintSpace(spaceNum);
+    /*debug*/
+    /*
+    printf("/*cur:%s", rootnode->name);
+    if (rootnode->leftchild != NULL)
+        printf(" leftchild:%s ", rootnode->leftchild->name);
+    else
+        printf(" leftchild:NULL");
+    if (rootnode->rightbrother != NULL)
+        printf(" rightbrother:%s\n", rootnode->rightbrother->name);
+    else
+        printf(" rightbrother:NULL\n");
+    */
+    /*debug*/
     PrintVal(rootnode);
     PrintTree(rootnode->leftchild, spaceNum+1);
     PrintTree(rootnode->rightbrother, spaceNum);
 }
 
-void PrintError(char errorType, int lineno, char* msg){
-    fprintf(stderr, "Error type %c at Line %d: %s.\n", errorType, lineno, msg);
+int PrintError(char errorType, int lineno, char* msg){
+    if (isNewError(lineno)){
+        fprintf(stderr, "Error type %c at Line %d: %s.\n", errorType, lineno, msg);
+        return 1;
+    }
+    return 0;
 }
 
 void TearsDown(struct Node* rootnode){
@@ -2778,4 +2928,11 @@ void TearsDown(struct Node* rootnode){
     free(rootnode);
 }
 
-
+int isNewError(int lineno){
+    if (lastErrorLine != lineno){
+        lastErrorLine = lineno;
+        hasError = 1;
+        return 1;
+    }
+    return 0;
+}

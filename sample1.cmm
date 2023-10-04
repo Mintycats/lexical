@@ -1,8 +1,7 @@
 int main()
 {
-    int i = 11222;
-    int k = 012;
-    int m = 0x12;
-    int n = 01.23E12;
-    int o = m - n;
+    float a[10][2];
+    int i;
+    a[5,3] = 1.5;
+    if (a[1][2] == 0) i = 1 else i = 0;
 }

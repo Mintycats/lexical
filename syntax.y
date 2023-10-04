@@ -11,7 +11,8 @@
     /* declared funcion */
     int yylex(void);
     void yyerror(char*);
-    void PrintError(char , int , char*);
+    int PrintError(char , int , char*);
+    int isNewError(int);
 
     /* declared tree node */
     enum Nodetype {
@@ -38,13 +39,20 @@
         struct Node* leftchild;
         struct Node* rightbrother;
     };
+
+    /* declared tree funcion */
     struct Node* MakeNode(char* nodename, enum Nodetype type, int lineno);
     void PrintTree(struct Node* rootnode, int spaceNum);
     void MakeTree(struct Node* father, struct Node* child);
     void TearsDown(struct Node* rootnode);
-
+    
+    /* declared global value */
     int hasError = 0;
+    int lastErrorLine = 0;
     struct Node* Root = NULL;
+
+    struct Node* debugger = NULL;
+    struct Node* debugger2 = NULL;
 %}
 
 /* declared types */
@@ -95,9 +103,21 @@ Program : ExtDefList {
             $$->valtype = NoneType;
             Root = $$;
             MakeTree($$, $1);
+            //printf("[Program]:\n");
+            //PrintTree(debugger, 0);
           }
         | ExtDefList error {
-            
+             if (PrintError('B', @2.first_line, "[Program]: error")){
+                struct Node* errorNode = MakeNode("ERROR", Noval, @2.first_line);
+                errorNode->valtype = NoneType;
+                $$ = MakeNode("Program", Expression, @$.first_line);
+                $$->valtype = NoneType;
+                MakeTree($$, $1);
+                MakeTree($$, errorNode);
+             }
+             else{
+                $$ = NULL;
+             }
           }
         ;
 
@@ -154,6 +174,7 @@ ExtDecList : VarDec{
 
 Specifier : TYPE{
                 $$ = MakeNode("Specifier", Expression, @$.first_line);
+                $$->valtype = NoneType;
                 struct Node* typenode = MakeNode("TYPE", Val, @1.first_line);
                 typenode->valtype = StringType;
                 strcpy(typenode->strval, $1);
@@ -235,6 +256,25 @@ VarDec : ID{
             MakeTree($$, intnode);
             MakeTree($$, rbnode);
          }
+       | VarDec LB error RB{
+            if (PrintError('B', @3.first_line, "[VarDec]: error []")){
+                struct Node* errorNode = MakeNode("ERROR", Noval, @3.first_line);
+                errorNode->valtype = NoneType;
+                $$ = MakeNode("VarDec", Expression, @$.first_line);
+                $$->valtype = NoneType;
+                struct Node* lbNode = MakeNode("LB", Noval, @2.first_line);
+                lbNode->valtype = NoneType;
+                struct Node* rbNode = MakeNode("RB", Noval, @4.first_line);
+                rbNode->valtype = NoneType;
+                MakeTree($$, $1);
+                MakeTree($$, lbNode);
+                MakeTree($$, errorNode);
+                MakeTree($$, rbNode);
+            }
+            else{
+                $$ = NULL;
+            }
+         } 
        ;
 
 FunDec : ID LP VarList RP{
@@ -299,13 +339,29 @@ CompSt : LC DefList StmtList RC{
             lcnode->valtype = NoneType;
             struct Node* rcnode = MakeNode("RC", Noval, @4.first_line);
             rcnode->valtype = NoneType;
+            //printf("[CompSt]:\n");
+            //PrintTree(debugger, 0);
             MakeTree($$, lcnode);
             MakeTree($$, $2);
             MakeTree($$, $3);
             MakeTree($$, rcnode);
+            //printf("[CompSt]:\n");
+            //PrintTree(debugger, 0);
          }
        | error RC{
-            
+            if (PrintError('B', @1.first_line, "[CompSt]: error \(")){
+                struct Node* errorNode = MakeNode("ERROR", Noval, @1.first_line);
+                errorNode->valtype = NoneType;
+                $$ = MakeNode("CompSt", Expression, @$.first_line);
+                $$->valtype = NoneType;
+                struct Node* rcNode = MakeNode("RC", Noval, @2.first_line);
+                rcNode->valtype = NoneType;
+                MakeTree($$, errorNode);
+                MakeTree($$, rcNode);
+            }
+            else{
+                $$ = NULL;
+            }
          }
        ;
 
@@ -392,17 +448,33 @@ Stmt : Exp SEMI{
         MakeTree($$, $5);
        }
      | error SEMI{
-       
+        if (PrintError('B', @1.first_line, "[Stmt]: error ;")){
+            struct Node* errorNode = MakeNode("ERROR", Noval, @1.first_line);
+            errorNode->valtype = NoneType;
+            $$ = MakeNode("Stmt", Expression, @$.first_line);
+            $$->valtype = NoneType;
+            struct Node* semiNode = MakeNode("SEMI", Noval, @2.first_line);
+            semiNode->valtype = NoneType;
+            MakeTree($$, errorNode);
+            MakeTree($$, semiNode);
+        }
+        else{
+            $$ = NULL;
+        }
        }
      ;
 
 DefList : Def DefList{
             $$ = MakeNode("DefList", Expression, @$.first_line);
             $$->valtype = NoneType;
-            struct Node* defnode = MakeNode("Def", Noval, @1.first_line);
-            defnode->valtype = NoneType;
-            MakeTree($$, defnode);
+            //printf("[DefList]:\n");
+            //PrintTree(debugger, 0);
+            MakeTree($$, $1);
             MakeTree($$, $2);
+            //debugger = $$;
+            //printf("[DefList]:\n");
+            //PrintTree($1, 0);
+            //PrintTree(debugger, 0);
           }
         | { $$ = NULL; }
         ;
@@ -412,9 +484,19 @@ Def : Specifier DecList SEMI{
         $$->valtype = NoneType;
         struct Node* seminode = MakeNode("SEMI", Noval, @3.first_line);
         seminode->valtype = NoneType;
+        /*
+        if ($1 != NULL)
+            printf("[Def]$1 %s\n", $1->name);
+        if ($2 != NULL)
+            printf("[Def]$2 %s\n", $2->name);
+        */
         MakeTree($$, $1);
+        //printf("[Def]child %s\n", $$->leftchild->name);
         MakeTree($$, $2);
         MakeTree($$, seminode);
+        //printf("[Def]:\n");
+        //PrintTree($$, 0);
+        debugger2 = $$;
       }
     ;
 
@@ -627,7 +709,38 @@ Exp : Exp ASSIGNOP Exp{
         MakeTree($$, flonode);
       }
     | error RP{
-      
+        if (PrintError('B', @1.first_line, "Error in Exp")){
+            struct Node* errorNode = MakeNode("ERROR", Noval, @1.first_line);
+            errorNode->valtype = NoneType;
+            $$ = MakeNode("Exp", Expression, @$.first_line);
+            $$->valtype = NoneType;
+            struct Node* rpNode = MakeNode("RP", Noval, @2.first_line);
+            rpNode->valtype = NoneType;
+            MakeTree($$, errorNode);
+            MakeTree($$, rpNode);
+        }
+        else{
+            $$ = NULL;
+        }
+      }
+    | Exp LB error RB{
+        if (PrintError('B', @3.first_line, "[Exp]: []error")){
+            struct Node* errorNode = MakeNode("ERROR", Noval, @3.first_line);
+            errorNode->valtype = NoneType;
+            $$ = MakeNode("Exp", Expression, @$.first_line);
+            $$->valtype = NoneType;
+            struct Node* lbnode = MakeNode("LB", Noval, @2.first_line);
+            lbnode->valtype = NoneType;
+            struct Node* rbnode = MakeNode("RB", Noval, @4.first_line);
+            rbnode->valtype = NoneType;
+            MakeTree($$, $1);
+            MakeTree($$, lbnode);
+            MakeTree($$, errorNode);
+            MakeTree($$, rbnode);
+        }
+        else{
+            $$ = NULL;
+        }
       }
     ;
 
@@ -648,10 +761,10 @@ Args : Exp COMMA Args{
      ;
 
 %%
-/*
+
 void yyerror(char* msg){
     
-}*/
+}
 
 /*
 enum Nodetype {
@@ -700,6 +813,9 @@ void MakeTree(struct Node* father, struct Node* child){
         return;
     }*/
     //error report
+    
+    if (child == NULL)
+        return;
     
     if (father->leftchild == NULL)
         father->leftchild = child;
@@ -750,13 +866,30 @@ void PrintTree(struct Node* rootnode, int spaceNum){
     if (rootnode == NULL)
         return;
     PrintSpace(spaceNum);
+    /*debug*/
+    /*
+    printf("/*cur:%s", rootnode->name);
+    if (rootnode->leftchild != NULL)
+        printf(" leftchild:%s ", rootnode->leftchild->name);
+    else
+        printf(" leftchild:NULL");
+    if (rootnode->rightbrother != NULL)
+        printf(" rightbrother:%s\n", rootnode->rightbrother->name);
+    else
+        printf(" rightbrother:NULL\n");
+    */
+    /*debug*/
     PrintVal(rootnode);
     PrintTree(rootnode->leftchild, spaceNum+1);
     PrintTree(rootnode->rightbrother, spaceNum);
 }
 
-void PrintError(char errorType, int lineno, char* msg){
-    fprintf(stderr, "Error type %c at Line %d: %s.\n", errorType, lineno, msg);
+int PrintError(char errorType, int lineno, char* msg){
+    if (isNewError(lineno)){
+        fprintf(stderr, "Error type %c at Line %d: %s.\n", errorType, lineno, msg);
+        return 1;
+    }
+    return 0;
 }
 
 void TearsDown(struct Node* rootnode){
@@ -768,4 +901,11 @@ void TearsDown(struct Node* rootnode){
     free(rootnode);
 }
 
-
+int isNewError(int lineno){
+    if (lastErrorLine != lineno){
+        lastErrorLine = lineno;
+        hasError = 1;
+        return 1;
+    }
+    return 0;
+}

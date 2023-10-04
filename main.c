@@ -3,6 +3,8 @@ extern int yyparse(void);
 extern void yyrestart(FILE* input_file);
 extern int hasError;
 extern struct Node* Root;
+extern struct Node* debugger;
+extern struct Node* debugger2;
 extern void PrintTree(struct Node* rootnode, int spaceNum);
 extern void TearsDown(struct Node* rootnode);
 int main(int argc, char** argv){
@@ -15,6 +17,8 @@ int main(int argc, char** argv){
         yyrestart(f);
         yyparse();
         if (!hasError){
+            //printf("[main]:\n");
+            //PrintTree(debugger, 0);
             PrintTree(Root, 0);
         }
         TearsDown(Root);

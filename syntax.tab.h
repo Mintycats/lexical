@@ -84,7 +84,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 51 "syntax.y"
+#line 59 "syntax.y"
 
     int type_int;
     float type_float;

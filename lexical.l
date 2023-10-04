@@ -6,9 +6,14 @@
         yylloc.first_column = yycolumn;\
         yylloc.last_column = yycolumn + yyleng - 1;\
         yycolumn += yyleng;
+     /*declared funcion*/
      int E2INT(char* text);
      int TS2INT(char* text);
      void JumpALine();
+     extern int PrintError(char, int, char*);
+     extern int isNewError(int);
+
+     /*declared global*/
 %}
 
 %option yylineno
@@ -110,7 +115,9 @@ EOF <<EOF>>
    }
 
 
-. {fprintf(stderr, "Error type A at line %d: Mysterious character \'%s\'\n", yylineno, yytext);}
+. {
+    PrintError('A', yylineno, "Mysterious character");
+  }
 
 
 

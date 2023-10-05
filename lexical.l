@@ -7,6 +7,7 @@
         yylloc.last_column = yycolumn + yyleng - 1;\
         yycolumn += yyleng;
      /*declared funcion*/
+     void textDealer();
      int E2INT(char* text);
      int TS2INT(char* text);
      void JumpALine();
@@ -25,7 +26,8 @@ letters {letter}+
 INT 0|[1-9][0-9]*
 EINT 0[0-7]*
 TSINT 0[xX][0-9A-Fa-f]+
-FLOAT {INT}\.{digits}|{digit}*\.{digit}*[Ee][\+\-]?{digits}
+FLOAT {digit}*\.{digits}|{digits}\.|({digit}*\.{digits}|{digits}\.)[Ee][\+\-]?{digits}
+
 ID {letters}[_a-zA-Z0-9]*
 
 SEMI ;
@@ -37,30 +39,51 @@ MINUS -
 STAR *
 DIV /
 AND &&
-OR \|\|
-DOT \.
+OR ||
+DOT .
 NOT !
 TYPE int|float
 LP (
 RP )
-LB \[
-RB \]
-LC \{
-RC \}
+LB [
+RB ]
+LC {
+RC }
 STRUCT struct
 RETURN return
 IF if
 ELSE else
 WHILE while
+del [ \t\r]
 EOF <<EOF>>
+UNDEFINE [_a-zA-Z0-9]*
 
 %%
 "+" {return PLUS;}
 "-" {return MINUS;}
 "*" {return STAR;}
+"//" {
+        if (isNewError(yylineno)){
+            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
+        }
+        JumpALine();
+     }
+"/*" {
+        if (isNewError(yylineno)){
+            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
+        }
+        textDealer();
+     }
+"*/" {
+        if (isNewError(yylineno)){
+            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
+        }
+        JumpALine();
+     }
 "/" {return DIV;}
 ";" {return SEMI;}
 "," {return COMMA;}
+"." {return DOT;}
 "=" {return ASSIGNOP;}
 ">" {return RELOP;}
 "<" {return RELOP;}
@@ -87,36 +110,39 @@ EOF <<EOF>>
         return TYPE;
        }
 {INT} {
+        //printf("[lexical INT]:%s\n", yytext);
         yylval.type_int = atoi(yytext);
         return INT;
       }
-{EINT} {
-        yylval.type_int = E2INT(yytext);
-        return INT;
-       }
-{TSINT} {
-        yylval.type_int = TS2INT(&yytext[2]);
-        return INT;
-        }
 {FLOAT} {
-        yylval.type_float = atof(yytext);
-        return FLOAT;
+            //printf("[FLOAT]%s\n", yytext);
+            yylval.type_float = atof(yytext);
+            return FLOAT;
         }
 {ID} {
+        //printf("[lexical ID]:%s\n", yytext);
         yylval.type_string = strdup(yytext);
         return ID;
      }
-" " {}
-"//" {
-        JumpALine();
-     }
+
+
 \n {
-    yycolumn = 1;
+        yycolumn = 1;
    }
 
+{del} { }
+
+{UNDEFINE} {
+            //PrintError('A', yylineno, "[UNDEFINE]Mysterious character");
+                if (isNewError(yylineno)){
+                    fprintf(stdout, "Error type B at Line %d: [UNDIFINE]\n", yylineno);
+                }
+            }
 
 . {
-    PrintError('A', yylineno, "Mysterious character");
+     if (isNewError(yylineno)){
+        fprintf(stdout, "Error type A at Line %d: [default]\n", yylineno);
+     }
   }
 
 
@@ -170,6 +196,23 @@ void JumpALine(){
     char tmpchar = input();
     while (tmpchar != '\n'){
         tmpchar = input();
+    }
+}
+
+void textDealer(){//jump through text
+    char lastChar;
+    while (1){
+        lastChar = input();
+        if (isNewError(yylineno)){
+            fprintf(stdout, "Error type B at Line %d: [textDealer]\n", yylineno);
+        }
+        if (lastChar == '*' && input() == '/'){
+            if (isNewError(yylineno)){
+                fprintf(stdout, "Error type B at Line %d: [textDealer]\n", yylineno);
+            }
+            JumpALine();
+            return;
+        }
     }
 }
 

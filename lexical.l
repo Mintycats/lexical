@@ -13,6 +13,7 @@
      void JumpALine();
      extern int PrintError(char, int, char*);
      extern int isNewError(int);
+     extern void ErrorPrinter(char, char*);
 
      /*declared global*/
 %}
@@ -63,21 +64,15 @@ UNDEFINE [_a-zA-Z0-9]*
 "-" {return MINUS;}
 "*" {return STAR;}
 "//" {
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
-        }
+        ErrorPrinter('B', "[jump]");
         JumpALine();
      }
 "/*" {
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
-        }
+        ErrorPrinter('B', "[jump]");
         textDealer();
      }
 "*/" {
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
-        }
+        ErrorPrinter('B', "[jump]");
         JumpALine();
      }
 "/" {return DIV;}
@@ -133,16 +128,11 @@ UNDEFINE [_a-zA-Z0-9]*
 {del} { }
 
 {UNDEFINE} {
-            //PrintError('A', yylineno, "[UNDEFINE]Mysterious character");
-                if (isNewError(yylineno)){
-                    fprintf(stdout, "Error type B at Line %d: [UNDIFINE]\n", yylineno);
-                }
+                ErrorPrinter('B', "[UNDEFINE]");
             }
 
 . {
-     if (isNewError(yylineno)){
-        fprintf(stdout, "Error type A at Line %d: [default]\n", yylineno);
-     }
+     ErrorPrinter('A', "[default]");
   }
 
 
@@ -203,16 +193,11 @@ void textDealer(){//jump through text
     char lastChar;
     while (1){
         lastChar = input();
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [textDealer]\n", yylineno);
-        }
+        ErrorPrinter('B', "[textDealer]");
         if (lastChar == '*' && input() == '/'){
-            if (isNewError(yylineno)){
-                fprintf(stdout, "Error type B at Line %d: [textDealer]\n", yylineno);
-            }
+            ErrorPrinter('B', "[textDealer]");
             JumpALine();
             return;
         }
     }
 }
-

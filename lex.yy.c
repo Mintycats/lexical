@@ -548,10 +548,11 @@ char *yytext;
      void JumpALine();
      extern int PrintError(char, int, char*);
      extern int isNewError(int);
+     extern void ErrorPrinter(char, char*);
 
      /*declared global*/
-#line 554 "lex.yy.c"
 #line 555 "lex.yy.c"
+#line 556 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -768,9 +769,9 @@ YY_DECL
 		}
 
 	{
-#line 61 "lexical.l"
+#line 62 "lexical.l"
 
-#line 774 "lex.yy.c"
+#line 775 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -839,177 +840,171 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 62 "lexical.l"
+#line 63 "lexical.l"
 {return PLUS;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 63 "lexical.l"
+#line 64 "lexical.l"
 {return MINUS;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 64 "lexical.l"
+#line 65 "lexical.l"
 {return STAR;}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 65 "lexical.l"
+#line 66 "lexical.l"
 {
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
-        }
+        ErrorPrinter('B', "[jump]");
         JumpALine();
      }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 71 "lexical.l"
+#line 70 "lexical.l"
 {
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
-        }
+        ErrorPrinter('B', "[jump]");
         textDealer();
      }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 77 "lexical.l"
+#line 74 "lexical.l"
 {
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
-        }
+        ErrorPrinter('B', "[jump]");
         JumpALine();
      }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 83 "lexical.l"
+#line 78 "lexical.l"
 {return DIV;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 84 "lexical.l"
+#line 79 "lexical.l"
 {return SEMI;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 85 "lexical.l"
+#line 80 "lexical.l"
 {return COMMA;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 86 "lexical.l"
+#line 81 "lexical.l"
 {return DOT;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 87 "lexical.l"
+#line 82 "lexical.l"
 {return ASSIGNOP;}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 88 "lexical.l"
+#line 83 "lexical.l"
 {return RELOP;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 89 "lexical.l"
+#line 84 "lexical.l"
 {return RELOP;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 90 "lexical.l"
+#line 85 "lexical.l"
 {return RELOP;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 91 "lexical.l"
+#line 86 "lexical.l"
 {return RELOP;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 92 "lexical.l"
+#line 87 "lexical.l"
 {return RELOP;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 93 "lexical.l"
+#line 88 "lexical.l"
 {return RELOP;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 94 "lexical.l"
+#line 89 "lexical.l"
 {return AND;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 95 "lexical.l"
+#line 90 "lexical.l"
 {return OR;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 96 "lexical.l"
+#line 91 "lexical.l"
 {return NOT;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 97 "lexical.l"
+#line 92 "lexical.l"
 {return LP;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 98 "lexical.l"
+#line 93 "lexical.l"
 {return RP;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 99 "lexical.l"
+#line 94 "lexical.l"
 {return LB;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 100 "lexical.l"
+#line 95 "lexical.l"
 {return RB;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 101 "lexical.l"
+#line 96 "lexical.l"
 {return LC;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 102 "lexical.l"
+#line 97 "lexical.l"
 {return RC;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 103 "lexical.l"
+#line 98 "lexical.l"
 {return STRUCT;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 104 "lexical.l"
+#line 99 "lexical.l"
 {return RETURN;}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 105 "lexical.l"
+#line 100 "lexical.l"
 {return IF;}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 106 "lexical.l"
+#line 101 "lexical.l"
 {return ELSE;}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 107 "lexical.l"
+#line 102 "lexical.l"
 {return WHILE;}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 108 "lexical.l"
+#line 103 "lexical.l"
 {
         yylval.type_string = strdup(yytext);
         return TYPE;
@@ -1017,7 +1012,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 112 "lexical.l"
+#line 107 "lexical.l"
 {
         //printf("[lexical INT]:%s\n", yytext);
         yylval.type_int = atoi(yytext);
@@ -1026,7 +1021,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 117 "lexical.l"
+#line 112 "lexical.l"
 {
             //printf("[FLOAT]%s\n", yytext);
             yylval.type_float = atof(yytext);
@@ -1035,7 +1030,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 122 "lexical.l"
+#line 117 "lexical.l"
 {
         //printf("[lexical ID]:%s\n", yytext);
         yylval.type_string = strdup(yytext);
@@ -1045,41 +1040,36 @@ YY_RULE_SETUP
 case 36:
 /* rule 36 can match eol */
 YY_RULE_SETUP
-#line 129 "lexical.l"
+#line 124 "lexical.l"
 {
         yycolumn = 1;
    }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 133 "lexical.l"
+#line 128 "lexical.l"
 { }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 135 "lexical.l"
+#line 130 "lexical.l"
 {
-            //PrintError('A', yylineno, "[UNDEFINE]Mysterious character");
-                if (isNewError(yylineno)){
-                    fprintf(stdout, "Error type B at Line %d: [UNDIFINE]\n", yylineno);
-                }
+                ErrorPrinter('B', "[UNDEFINE]");
             }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 142 "lexical.l"
+#line 134 "lexical.l"
 {
-     if (isNewError(yylineno)){
-        fprintf(stdout, "Error type A at Line %d: [default]\n", yylineno);
-     }
+     ErrorPrinter('A', "[default]");
   }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 150 "lexical.l"
+#line 140 "lexical.l"
 ECHO;
 	YY_BREAK
-#line 1083 "lex.yy.c"
+#line 1073 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2096,7 +2086,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 150 "lexical.l"
+#line 140 "lexical.l"
 
 
 int LocalPow(int bnum, int expnum){// bnum*bnum****bnum
@@ -2153,17 +2143,12 @@ void textDealer(){//jump through text
     char lastChar;
     while (1){
         lastChar = input();
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [textDealer]\n", yylineno);
-        }
+        ErrorPrinter('B', "[textDealer]");
         if (lastChar == '*' && input() == '/'){
-            if (isNewError(yylineno)){
-                fprintf(stdout, "Error type B at Line %d: [textDealer]\n", yylineno);
-            }
+            ErrorPrinter('B', "[textDealer]");
             JumpALine();
             return;
         }
     }
 }
-
 

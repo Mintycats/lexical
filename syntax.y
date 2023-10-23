@@ -13,6 +13,7 @@
     void yyerror(char*);
     int PrintError(char , int , char*);
     int isNewError(int);
+    void ErrorPrinter(char, char*);//used in yyerror
 
     /* declared tree node */
     enum Nodetype {
@@ -53,6 +54,30 @@
 
     struct Node* debugger = NULL;
     struct Node* debugger2 = NULL;
+
+    /* defined micro*/
+    #define MAKE_NODE_EXP(nodeName, nodeLink, nodeLocation) \
+            nodeLink = MakeNode(nodeName, Expression, nodeLocation.first_line); \
+            nodeLink->valtype = NoneType;
+    
+    #define MAKE_NODE_NOVAL(nodeName, nodeLink, nodeLocation) \
+            nodeLink = MakeNode(nodeName, Noval, nodeLocation.first_line); \
+            nodeLink->valtype = Noval;
+
+    #define MAKE_NODE_INT(nodeName, nodeLink, nodeLocation, nodeVal) \
+            nodeLink = MakeNode(nodeName, Val, nodeLocation.first_line); \
+            nodeLink->valtype = IntType; \
+            nodeLink->intval = nodeVal;
+    
+    #define MAKE_NODE_FLOAT(nodeName, nodeLink, nodeLocation, nodeVal) \
+            nodeLink = MakeNode(nodeName, Val, nodeLocation.first_line); \
+            nodeLink->valtype = FloatType; \
+            nodeLink->floatval = nodeVal;
+
+    #define MAKE_NODE_STRING(nodeName, nodeLink, nodeLocation, nodeVal) \
+            nodeLink = MakeNode(nodeName, Val, nodeLocation.first_line); \
+            nodeLink->valtype = StringType; \
+            strcpy(nodeLink->strval, nodeVal);
 %}
 
 /* declared types */
@@ -100,8 +125,9 @@
 %%
 
 Program : ExtDefList {
-            $$ = MakeNode("Program", Expression, @$.first_line);
-            $$->valtype = NoneType;
+            /*$$ = MakeNode("Program", Expression, @$.first_line);
+            $$->valtype = NoneType;*/
+            MAKE_NODE_EXP("Program", $$, @$);
             Root = $$;
             MakeTree($$, $1);
             //printf("[Program]:\n");
@@ -123,8 +149,9 @@ Program : ExtDefList {
         ;
 
 ExtDefList : ExtDef ExtDefList {
-                $$ = MakeNode("ExtDefList", Expression, @$.first_line);
-                $$->valtype = NoneType;
+                /*$$ = MakeNode("ExtDefList", Expression, @$.first_line);
+                $$->valtype = NoneType;*/
+                MAKE_NODE_EXP("ExtDefList", $$, @$);
                 MakeTree($$, $1);
                 MakeTree($$, $2);
              }
@@ -132,10 +159,8 @@ ExtDefList : ExtDef ExtDefList {
            ;
 
 ExtDef : Specifier ExtDecList SEMI{
-            $$ = MakeNode("ExtDef", Expression, @$.first_line);
-            $$->valtype = NoneType;
-            struct Node* seminode = MakeNode("SEMI", Noval, @3.first_line);
-            seminode->valtype = NoneType;
+            MAKE_NODE_EXP("ExtDef", $$, @$);
+            MAKE_NODE_NOVAL("SEMI", $3, @3);
             MakeTree($$, $1);
             MakeTree($$, $2);
             MakeTree($$, seminode);
@@ -154,7 +179,11 @@ ExtDef : Specifier ExtDecList SEMI{
             MakeTree($$, $1);
             MakeTree($$, $2);
             MakeTree($$, $3);
-         }
+         }/*
+       | Specifier ExtDecList error SEMI{
+            PrintError('B', @3.first_line, "[ExtDef]: Specifier ExtDecList SEMI");
+            $$ = NULL;
+         }*/
        ;
 
 ExtDecList : VarDec{
@@ -1093,9 +1122,7 @@ void PrintTree(struct Node* rootnode, int spaceNum){
 }
 
 void yyerror(char* msg){
-    if (isNewError(yylineno)){
-        fprintf(stdout, "Error type B at Line %d: yyerror\n", yylineno);
-    }
+    ErrorPrinter('B', msg);
 }
 
 int PrintError(char errorType, int lineno, char* msg){
@@ -1123,4 +1150,9 @@ int isNewError(int lineno){
         return 1;
     }
     return 0;
+}
+
+void ErrorPrinter(char errorType, char* msg){
+    if (isNewError(yylineno))
+        fprintf(stdout, "Error type %c at Line %d: %s\n", errorType, yylineno, msg);
 }

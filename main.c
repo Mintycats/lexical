@@ -19,7 +19,8 @@ int main(int argc, char** argv){
         if (!hasError){
             //printf("[main]:\n");
             //PrintTree(debugger, 0);
-            PrintTree(Root, 0);
+            //PrintTree(Root, 0);
+            checkSema(Root);
         }
         TearsDown(Root);
         return 0;

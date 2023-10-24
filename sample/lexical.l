@@ -64,21 +64,15 @@ UNDEFINE [_a-zA-Z0-9]*
 "-" {return MINUS;}
 "*" {return STAR;}
 "//" {
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
-        }
+        ErrorPrinter('B', "[jump]");
         JumpALine();
      }
 "/*" {
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
-        }
+        ErrorPrinter('B', "[jump]");
         textDealer();
      }
 "*/" {
-        if (isNewError(yylineno)){
-            fprintf(stdout, "Error type B at Line %d: [jump]\n", yylineno);
-        }
+        ErrorPrinter('B', "[jump]");
         JumpALine();
      }
 "/" {return DIV;}
@@ -134,7 +128,7 @@ UNDEFINE [_a-zA-Z0-9]*
 {del} { }
 
 {UNDEFINE} {
-            ErrorPrinter('B', "[UNDEFINE]");
+                ErrorPrinter('B', "[UNDEFINE]");
             }
 
 . {
@@ -207,4 +201,3 @@ void textDealer(){//jump through text
         }
     }
 }
-

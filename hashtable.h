@@ -11,14 +11,11 @@
 #endif
 
 //declare struct type
-enum BasicType{
-    INT,
-    FLOAT
-};
+struct TypeNode;
 
 struct FieldList{
     char name[NAME_LEN];
-    BasicType basicType;
+    struct TypeNode type;
     struct FieldList* next;
 }
 
@@ -30,8 +27,8 @@ struct Structure{
 struct Function{
     char name[NAME_LEN];
     int lineno;
-    BasicType basicType;
-    FieldList param;
+    struct TypeNode type;
+    struct FieldList param;
 };
 
 struct TypeNode{
@@ -45,7 +42,7 @@ struct TypeNode{
         int variable;// int1 float2
         struct {
             int size;
-            BasicType basicType;
+            struct TypeNode* type;
         } array;
         struct Structure structure;
         struct Function function;
@@ -60,7 +57,7 @@ struct TypeNode{
 
 struct HashNode{
     char nodeName[NAME_LEN];
-    TypeNode type;
+    struct TypeNode type;
     struct HashNode* next;
 };
 

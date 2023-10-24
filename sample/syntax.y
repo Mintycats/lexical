@@ -54,6 +54,8 @@
 
     struct Node* debugger = NULL;
     struct Node* debugger2 = NULL;
+
+    /* defined micro*/
 %}
 
 /* declared types */
@@ -101,8 +103,9 @@
 %%
 
 Program : ExtDefList {
-            $$ = MakeNode("Program", Expression, @$.first_line);
-            $$->valtype = NoneType;
+            /*$$ = MakeNode("Program", Expression, @$.first_line);
+            $$->valtype = NoneType;*/
+            MAKE_NODE_EXP("Program", $$, @$);
             Root = $$;
             MakeTree($$, $1);
             //printf("[Program]:\n");
@@ -124,8 +127,9 @@ Program : ExtDefList {
         ;
 
 ExtDefList : ExtDef ExtDefList {
-                $$ = MakeNode("ExtDefList", Expression, @$.first_line);
-                $$->valtype = NoneType;
+                /*$$ = MakeNode("ExtDefList", Expression, @$.first_line);
+                $$->valtype = NoneType;*/
+                MAKE_NODE_EXP("ExtDefList", $$, @$);
                 MakeTree($$, $1);
                 MakeTree($$, $2);
              }
@@ -133,10 +137,8 @@ ExtDefList : ExtDef ExtDefList {
            ;
 
 ExtDef : Specifier ExtDecList SEMI{
-            $$ = MakeNode("ExtDef", Expression, @$.first_line);
-            $$->valtype = NoneType;
-            struct Node* seminode = MakeNode("SEMI", Noval, @3.first_line);
-            seminode->valtype = NoneType;
+            MAKE_NODE_EXP("ExtDef", $$, @$);
+            MAKE_NODE_NOVAL("SEMI", $3, @3);
             MakeTree($$, $1);
             MakeTree($$, $2);
             MakeTree($$, seminode);
@@ -155,7 +157,11 @@ ExtDef : Specifier ExtDecList SEMI{
             MakeTree($$, $1);
             MakeTree($$, $2);
             MakeTree($$, $3);
-         }
+         }/*
+       | Specifier ExtDecList error SEMI{
+            PrintError('B', @3.first_line, "[ExtDef]: Specifier ExtDecList SEMI");
+            $$ = NULL;
+         }*/
        ;
 
 ExtDecList : VarDec{

@@ -59,5 +59,120 @@ int checkFunc(struct Function* func){
 }
 
 int checkSema(struct Node* node){
+    initSema();
+
+    ExtDefList(Root->leftchild);
+
+}
+
+void initSema(){
+    //init hashTable
+    for (int i = 0; i < HASH_NUM; i++){
+        hashTable[i] = NULL;
+    }
+
+}
+
+void ExtDefList(struct Node* node){
+    if (node == NULL){
+        if (DEBUG_FLAG){
+            printf("DEBUG: NULL in ExtDefList\n");
+        }
+        return ;
+    }
+    ExtDef(node->leftchild);
+    ExtDefList(node->leftchild->rightbrother);
+}
+
+void ExtDef(struct Node* node){
+    if (node == NULL){
+        if (DEBUG_FLAG){
+            printf("DEBUG: NULL in ExtDef\n");
+        }
+        return ;
+    }
+    int specType = getSpecifier(node->leftchild);
+    
+    if (strcmp(node->leftchild->rightbrother->name, "ExtDecList") == 0){//Specifier ExtDecList SEMI
+        ExtDecList(node->leftchild->rightbrother, specType);
+    }
+    if (strcmp(node->leftchild->rightbrother->name, "SEMI") == 0){//Specifier SEMI
+        Specifier(node->leftchild, specType);
+    }
+    if (strcmp(node->leftchild->rightbrother->name, "FunDec") == 0){//Specifier FunDec CompSt
+       FunDec(node->leftchild->rightbrother);
+       Compst(node->leftchild->rightbrother->rightbrother, );
+    }
+}
+
+int getSpecifier(struct Node* speci){
+    if (speci == NULL)
+        return 0;
+
+    if (strcmp(speci->leftchild->name, "StructSpecifier") == 0){
+        if (DEBUG_FLAG){
+            printf("type of specifier is struct\n");
+        }
+        return 3;//struct
+    }
+
+    switch (speci->leftchild->strval){
+        case "INT":
+            if (DEBUG_FLAG){
+                printf("type of specifier is int\n");
+            }
+            return 1;//int
+        case "FLOAT":
+            if (DEBUG_FLAG){
+                printf("type of specifier is float\n");
+            }
+            return 2;//float
+        default:
+            if (DEBUG_FLAG){
+                printf("DEBUG: Unknown Specifier\n");
+            }
+    };
+    return 0;
+}
+
+void FunDec(struct Node* node){
+    
+}
+
+void CompSt(struct Node* node, struct TypeNode* typeNode){
+    if (node == NULL || typeNode == NULL){
+        if (DEBUG_FLAG){
+            printf("DEBUG: node or typeNode in CompSt is NULL\n");
+        }
+        return ;
+    }
+
+    struct Node* child1 = node->leftchild->rightbrother;
+    struct Node* child2 = child1->rightbrother;
+    
+    if (strcmp(child1->name, "DefList") == 0){
+        DefList();
+        if (child2 != NULL && strcmp(child2->name, "StmtList") == 0){//StmtList
+            StmtList();
+        }
+    }
+    else if (strcmp(child1->name, "StmtList") == 0){
+        StmtList();
+    }
+    else{// {}
+        if (DEBUG_FLAG){
+            printf("DEBUG: an empty block\n");
+        }
+    }
+}
+
+void Stmt(struct Node* node, struct TypeNode* typeNode){
+    if (node == NULL || typeNode == NULL){
+        if (DEBUG_FLAG){
+            printf("DEBUG: node or typeNode in Stmt is NULL\n");
+        }
+        return ;
+    }
+
     
 }

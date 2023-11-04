@@ -1,4 +1,14 @@
+#ifndef STDIO
+#define STDIO
 #include<stdio.h>
+#endif
+#ifndef SEMA
+#define SEMA
+#include "sema.h"
+#endif
+
+//#define DEBUG_FLAG 1
+
 extern int yyparse(void);
 extern void yyrestart(FILE* input_file);
 extern int hasError;
@@ -20,6 +30,8 @@ int main(int argc, char** argv){
             //printf("[main]:\n");
             //PrintTree(debugger, 0);
             //PrintTree(Root, 0);
+            if (DEBUG_FLAG)
+                printf("DEBUG: printtree done\n");
             checkSema(Root);
         }
         TearsDown(Root);

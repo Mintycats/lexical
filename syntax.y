@@ -3,7 +3,10 @@
 %{
 
     #include<stdio.h>
+    #ifndef STRING
+    #define STRING
     #include<string.h>
+    #endif
     #include<stdarg.h>
     #include<ctype.h>
     #include "lex.yy.c"
@@ -156,6 +159,15 @@ ExtDef : Specifier ExtDecList SEMI{
             MakeTree($$, $2);
             MakeTree($$, $3);
          }
+       | Specifier FunDec SEMI{
+            $$ = MakeNode("ExtDef", Expression, @$.first_line);
+            $$->valtype = NoneType;
+            struct Node* semiNode = MakeNode("SEMI", Noval, @3.first_line);
+            semiNode->valtype = NoneType;
+            MakeTree($$, $1);
+            MakeTree($$, $2);
+            MakeTree($$, semiNode);
+        }
        ;
 
 ExtDecList : VarDec{

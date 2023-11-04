@@ -1,4 +1,4 @@
-%{
+%{   
      #include "syntax.tab.h"
      int yycolumn = 1;
      #define YY_USER_ACTION \

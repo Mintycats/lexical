@@ -1,0 +1,11 @@
+int factorial(int n);
+
+int factorial(int n){
+	int f_sum = 1;
+	int index = n;
+	while(index > 1){
+		f_sum = f_sum * index;
+		index = index - 1;
+	}
+	return f_sum;
+}

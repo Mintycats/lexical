@@ -18,13 +18,14 @@ extern struct Node* debugger2;
 extern void PrintTree(struct Node* rootnode, int spaceNum);
 extern void TearsDown(struct Node* rootnode);
 int main(int argc, char** argv){
+    FILE* irFile = NULL;
     if (argc > 1){
-	    FILE* f = fopen(argv[1], "r");
-        if (!f){
+	    FILE* sampleFile = fopen(argv[1], "r");
+        if (!sampleFile){
             perror(argv[1]);
             return 1;
         }
-        yyrestart(f);
+        yyrestart(sampleFile);
         yyparse();
         if (!hasError){
             //printf("[main]:\n");
@@ -33,6 +34,8 @@ int main(int argc, char** argv){
             if (DEBUG_FLAG)
                 printf("DEBUG: printtree done\n");
             checkSema(Root);
+
+
         }
         TearsDown(Root);
         return 0;

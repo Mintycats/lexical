@@ -88,9 +88,27 @@ struct Variable{
     struct Variable* next;
 };
 
+struct OperandHashNode{
+    char nodeName[NAME_LEN];
+    struct Operand* operand;
+    struct OperandHashNode* next;
+};
+
+
+struct OperandHashNode* operandTable[HASH_NUM];
 int variableNum, labelNum, tempNum;
 struct CodeList codeHead, codeTail;
 struct Variable variableHead, variableTail;
+
+extern int hashNumOf(char*); //calculate Hashing num
+
+struct OperandHashNode* operandHashFind(char* name);//find node in table
+
+int operandCheckExist(char* name);//1 exist 0 not
+
+int insertOperandHashNode(char* name,struct Operand* operand); //create hashNode and insert it
+
+struct Operand* lookUpOperand(char* name, enum OpType opType);
 
 struct CodeList* startInterCode(struct Node* rootNode);
 

@@ -247,6 +247,9 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
     debugPrint("start of trans_Exp");
     struct Node* child = node->leftchild;
     if (strcmp(child->name, "ID") == 0 && child->rightbrother == NULL){//ID
+        struct HashNode* tmpHash = hashFind(child->strval);
+        if (tmpHash == NULL)
+            return NULL;
         struct Operand* op = lookUp(str);//
         if (op->opType == OP_ARRAY && op->opType == OP_STRUCT){
             struct InterCode* ic = makeInterCode(IC_ASSIGN_ADDR);
@@ -288,15 +291,7 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
             return concat(concat(concat(concat(cl1, cl2), cl3), cl4), cl5);
         }
         else if (strcmp(child->rightbrother->name, "OR") == 0){
-            strstruct InterCode* label1 = makeLabel();
-            struct InterCode* label2 = makeLabel();
-            struct CodeList* cl1 = makeIc(NULL, operand, constZero);
-            struct CodeList* cl2 = trans_cond(node, label1, label2);
-            struct CodeList* cl3 = makeIc(NULL, label1, NULL, IC_LABEL);
-            struct CodeList* cl4 = makeIc(NULL, operand, constOne, IC_ASSIGN);
-            struct CodeList* cl5 = makeIc(NULL, label2, NULL, IC_LABEL);
-            return concat(concat(concat(concat(cl1, cl2), cl3), cl4), cl5);
-uct InterCode* label1 = makeLabel();
+            struct InterCode* label1 = makeLabel();
             struct InterCode* label2 = makeLabel();
             struct CodeList* cl1 = makeIc(NULL, operand, constZero);
             struct CodeList* cl2 = trans_cond(node, label1, label2);
@@ -375,7 +370,7 @@ uct InterCode* label1 = makeLabel();
         if (tmpHash == NULL)
             return NULL;
         struct Function* func = tmpHash->type->info.function;
-        if (strcmp(func->name, "write")){
+        if (strcmp(func->name, "read")){
             return makeIc(NULL, operand, NULL, IC_READ);
         }
         return makeCallIc(operand, func->name);
@@ -396,7 +391,30 @@ uct InterCode* label1 = makeLabel();
         }
         return concat(concat(cl1, cl2), makeCallIc(operand, func->name));
     }
+    
 
+}
+
+struct CodeList* trans_Args(struct Node* node, struct ArgList* args){
+    struct Node* child = node->leftchild;
+    if (strcmp(child->name, "Exp") == 0 && child->rightbrother == NULL){//Exp
+        struct Operand* op1 = makeTempOperand();
+        struct CodeList* cl1 = trans_Exp(child, op1);
+        struct ArgList* newArg = (struct ArgList*)malloc(sizeof(struct ArgList));
+        newArg->args = op1;
+        newArg->next = args;
+        args = newArg;
+        return cl1;
+    }
+    //Exp COMMA Args
+    struct Operand* op1 = makeTempOperand();
+    struct CodeList* cl1 = trans_Exp(child, op1);
+    struct ArgList* newArg = (struct ArgList*)malloc(sizeof(struct ArgList));
+    newArg->args = op1;
+    newArg->next = args;
+    args = newArg;
+    struct CodeList* cl2 = trans_Args(child->rightbrother->rightbrother, newArg);
+    return concat(cl1, cl2);
 }
 
 struct Operand* makeConstInt(int val){
@@ -407,4 +425,77 @@ struct Operand* makeConstInt(int val){
     return op;
 }
 
+struct OperandHashNode* operandHashFind(char* name){
+    int hashNum = hashNumOf(name);
+    for (struct OperandHashNode* tmpNode = operandHashTable[hashNum]; tmpNode != NULL; tmpNode = tmpNode->next){
+        if (strcmp(tmpNode->nodeName, name) == 0){//find it
+            if (DEBUG_FLAG){
+                printf("DEBUG: find operandHashNode named %s\n", name);
+            }
+            return tmpNode;
+        }
+    }
+    if (DEBUG_FLAG){
+        printf("DEBUG: not find operandHashNode named %s\n", name);
+    }
+    return NULL;
+}
 
+int operandCheckExist(char* name){
+    if (operandHashFind(name) == NULL)
+        return 0;
+    return 1;
+}
+
+int insertOperandHashNode(char* name,struct Operand* operand){
+    if (operandCheckExist(name) == 1){
+        if (DEBUG_FLAG){
+            printf("DEBUG: %s already exist, insert fail\n", name);
+        }
+        return 0;
+    }
+    int hashNum = hashNumOf(name);
+    struct OperandHashNode* newNode = (struct OperandHashNode*)malloc(sizeof(struct OperandHashNode));
+    strcpy(newNode->nodeName, name);
+    newNode->operand = operand;
+    newNode->next = NULL;
+    struct OperandHashNode* tmpNode = operandHashTable[hashNum];
+    if (tmpNode == NULL){
+        operandHashTable[hashNum] = newNode;
+        if (DEBUG_FLAG){
+            printf("DEBUG: successfully insert %s into %d\n", name, hashNum);
+        }
+        return 1;
+    }
+    else{
+        while (tmpNode->next != NULL){
+            tmpNode = tmpNode->next;
+        }
+        tmpNode->next = newNode;
+        if (DEBUG_FLAG){
+            printf("DEBUG: successfully insert %s into %d\n", name, hashNum);
+        }
+        return 1;
+    }
+}
+
+struct Operand* lookUpOperand(char* name, enum OpType opType){
+    struct Operand* op = operandHashFind(name);
+    if (op != NULL){
+        return op;
+    }
+    op = (struct Operand*)malloc(sizeof(struct Operand));
+    op->opType = opType;
+    if (opType == OP_LABEL){
+        op->info.labelNo = labelNum;
+        labelNum++;
+    }
+    else if (opType == OP_TEMP){
+        op->info.tempNo = tempNum;
+        tempNum++;
+    }
+    //
+    op->type = hashFind(name)->type;
+    insertOperandHashNode(name, op);
+    return op;
+}

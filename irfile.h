@@ -108,7 +108,8 @@ int operandCheckExist(char* name);//1 exist 0 not
 
 int insertOperandHashNode(char* name,struct Operand* operand); //create hashNode and insert it
 
-struct Operand* lookUpOperand(char* name, enum OpType opType);
+struct Operand* lookUpOperand(char* name);
+
 
 struct CodeList* startInterCode(struct Node* rootNode);
 

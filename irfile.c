@@ -247,10 +247,7 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
     debugPrint("start of trans_Exp");
     struct Node* child = node->leftchild;
     if (strcmp(child->name, "ID") == 0 && child->rightbrother == NULL){//ID
-        struct HashNode* tmpHash = hashFind(child->strval);
-        if (tmpHash == NULL)
-            return NULL;
-        struct Operand* op = lookUp(str);//
+        struct Operand* op = lookUpOperand(str);
         if (op->opType == OP_ARRAY && op->opType == OP_STRUCT){
             struct InterCode* ic = makeInterCode(IC_ASSIGN_ADDR);
             ic->info.assignAddr.leftOp = operand;
@@ -391,14 +388,59 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
         }
         return concat(concat(cl1, cl2), makeCallIc(operand, func->name));
     }
-    
+    if (strcmp(child->name, "Exp") == 0 && strcmp(child->rightbrother, "DOT") == 0){//Exp DOT ID
+        struct Operand* baseOp = makeTempOperand();
+        baseOp->opType = OP_ADDRESS;
+        struct CodeList* cl1 = trans_Exp(child, baseOp);
+        struct Operand* finalAddr = makeTempOperand();
+        struct InterCode* ic = makeInterCode(IC_ADDRESS);
+        ic->info.binOp.result = finalAddr;
+        ic->info.binOp.op1 = baseOp;
+        ic->info.binOp.op2 = sizeOfStruct(child->rightbrother->rightbrother->strval);
+        struct CodeList* cl2 = makeCodeList(ic);
+        struct InterCode* ic2 = makeInterCode(IC_ASSIGN);
+        ic2->info.assign.leftOp = operand;
+        ic2->info.assign.rightOp = finalAddr;
+        struct CodeList* cl3 = makeCodeList(ic2);
+        return concat(concat(cl1, cl2), cl3);
+    }
+    if (strcmp(child->name, "Exp") == 0 && strcmp(child->rightbrother->name, "LB") == 0){//Exp LB Exp RB
+        struct Operand* baseOp = makeTempOperand();
+        baseOp->opType = OP_ADDRESS;
+        struct Operand* tmpOp = lookUpOperand(child->leftchild->strval);
+        struct InterCode* ic1 = makeInterCode(IC_ASSIGN);
+        ic1->info.assign.leftOp = baseOp;
+        ic1->info.assign.rightOp = tmpOp;
+        struct CodeList* cl1 = makeCodeList(ic1);
+        struct Operand* offset = makeTempOperand();
+        struct Operand* finalAddr = makeTempOperand();
+        finalAddr->opType = OP_ADDR;
+        struct CodeList* cl2 = trans_Exp(child->rightbrother->rightbrother, offset);
+        ic1 = makeInterCode(IC_MUL);
+        ic1->info.binOp.result = offset;
+        ic1->info.binOp.op1 = offset;
+        ic1->info.binOp.op2 = constFour;
+        struct CodeList* cl3 = makeCodeList(ic1);
+        ic1 = makeInterCode(IC_ADDRESS);
+        ic1->info.binOp.result = finalAddr;
+        ic1->info.binOp.op1 = baseOp;
+        ic1->info.binOp.op2 = offset;
+        struct CodeList* cl4 = makeCodeList(ic1);
+        ic1 = makeInterCode(IC_ASSIGN);
+        ic1->info.leftOp = operand;
+        ic1->info.rightOp = finalAddr;
+        struct CodeList* cl5 = makeCodeList(ic1);
+        return concat(concat(concat(concat(cl1, cl2), cl3), cl4), cl5);
+    }
 
 }
 
-struct CodeList* trans_Args(struct Node* node, struct ArgList* args){
+struct CodeList* trans_Args(struct Node* node, struct ArgList* args, struct FieldList* fieldList){
     struct Node* child = node->leftchild;
     if (strcmp(child->name, "Exp") == 0 && child->rightbrother == NULL){//Exp
         struct Operand* op1 = makeTempOperand();
+        if (fieldList != NULL && (fieldList->type->type == ARRAY || fieldList->type->type == STRUCTURE))
+            op1->opType = OP_ADDRESS;
         struct CodeList* cl1 = trans_Exp(child, op1);
         struct ArgList* newArg = (struct ArgList*)malloc(sizeof(struct ArgList));
         newArg->args = op1;
@@ -408,12 +450,16 @@ struct CodeList* trans_Args(struct Node* node, struct ArgList* args){
     }
     //Exp COMMA Args
     struct Operand* op1 = makeTempOperand();
+    if (fieldList != NULL && (fieldList->type->type == ARRAY || fieldList->type->type == STRUCTURE))
+            op1->opType = OP_ADDRESS;
     struct CodeList* cl1 = trans_Exp(child, op1);
     struct ArgList* newArg = (struct ArgList*)malloc(sizeof(struct ArgList));
     newArg->args = op1;
     newArg->next = args;
     args = newArg;
-    struct CodeList* cl2 = trans_Args(child->rightbrother->rightbrother, newArg);
+    if (fieldList != NULL)
+        fieldList = fieldList->next;
+    struct CodeList* cl2 = trans_Args(child->rightbrother->rightbrother, newArg, fieldList);
     return concat(cl1, cl2);
 }
 

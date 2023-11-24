@@ -685,8 +685,9 @@ Exp : Exp ASSIGNOP Exp{
     | Exp RELOP Exp{
         $$ = MakeNode("Exp", Expression, @$.first_line);
         $$->valtype = NoneType;
-        struct Node* relopnode = MakeNode("RELOP", Noval, @2.first_line);
-        relopnode->valtype = NoneType;
+        struct Node* relopnode = MakeNode("RELOP", Val, @2.first_line);
+        relopnode->valtype = StringType;
+        strcpy(relopnode->strval, $2);
         MakeTree($$, $1);
         MakeTree($$, relopnode);
         MakeTree($$, $3);

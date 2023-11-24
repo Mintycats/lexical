@@ -3,6 +3,22 @@
 #include "irfile.h"
 #endif
 
+void insertIR(struct CodeList* codeList){
+    if (codeHead == NULL){
+        codeHead = codeList;
+        codeTail = codeHead;
+        while (codeTail->next != NULL){
+            codeTail = codeTail->next;
+        }
+        return;
+    }
+    codeTail->next = codeList;
+    codeList->last = codeTail;
+    while (codeTail->next != NULL)
+        codeTail = codeTail->next;
+}
+
+
 
 struct CodeList* startInterCode(struct Node* rootNode){
     debugPrint("start of InterCode");
@@ -16,8 +32,8 @@ struct CodeList* startInterCode(struct Node* rootNode){
     }
     codeHead = NULL;
     codeTail = NULL;
-    variableHead = NULL;
-    variableTail = NULL;
+    /*variableHead = NULL;
+    variableTail = NULL;*/
     variableNum = 1;
     labelNum = 1;
     tempNum = 1;
@@ -31,6 +47,20 @@ struct CodeList* startInterCode(struct Node* rootNode){
     }
 
     return codeHead;
+}
+
+struct CodeList* concat(struct CodeList* cl1, struct CodeList* cl2){
+    struct CodeList* tmpCl = cl1;
+    if (cl1 == NULL)
+        return cl2;
+    if (cl2 == NULL)
+        return cl1;
+    while (tmpCl->next != NULL){
+        tmpCl = tmpCl->next;
+    }
+    tmpCl->next = cl2;
+    cl2->last = tmpCl;
+    return cl1;
 }
 
 struct CodeList* trans_ExtDef(struct Node* node){
@@ -53,6 +83,31 @@ struct CodeList* trans_ExtDef(struct Node* node){
     struct CodeList codeList2 = trans_CompSt(child->rightbrother->rightbrother);
     
     return concat(codeList1, codeList2);
+}
+
+struct InterCode* makeInterCode(enum IcType icType){
+    struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
+    ic->icType = icType;
+    return ic;
+}
+
+struct CodeList* makeCodeList(struct InterCode* interCode){
+    struct CodeList* cl = (struct CodeList*)malloc(sizeof(struct CodeList));
+    cl->interCode = interCode;
+    cl->last = NULL;
+    cl->next = NULL;
+    return cl;
+}
+
+struct CodeList* makeParamCl(struct Operand* operand){
+    struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
+    ic->icType = IC_PARAM;
+    ic->info.paramOp = operand;
+    struct CodeList* cl = (struct CodeList*)malloc(sizeof(struct CodeList));
+    cl->interCode = ic;
+    cl->last = NULL;
+    cl->next = NULL;
+    return cl;
 }
 
 struct CodeList* trans_FunDec(struct Node* node){
@@ -78,26 +133,32 @@ struct CodeList* trans_FunDec(struct Node* node){
     fl = hashNode->type->info.function->param;
     while (fl != NULL){
         if (fl->type->type == VARIABLE){
-
+            struct Operand* tmpOp = makeOperand(OP_VARIABLE);
+            tmpOp->type = fl->type;
+            tmpOp->isParam = 1;
+            strcpy(tmpOp->name, fl->name);
+            insertOperandHashNode(fl->name, tmpOp);
+            struct CodeList* tmpCl = makeParamCl(tmpOp);
+            codeList = concat(codeList, tmmCl);
+            fl = fl->next;
         }else{
-
+            struct Operand* tmpOp = NULL;
+            if (fl->type->type == STRUCTURE)
+            	tmpOp = makeOperand(OP_STRUCTURE);
+            else if (fl->type->type == ARRAY)
+            	tmpOp = makeOperand(OP_ARRAY);
+            tmpOp->type = fl->type;
+            tmpOp->isParam = 1;
+            strcpy(tmpOp->name, fl->name);
+            insertOperandHashNode(fl->name, tmpOp);
+            struct CodeList* tmpCl = makeParamCl(tmpOp);
+            codeList = concat(codeList, tmmCl);
+            fl = fl->next;
         }
     }
+    return codeList;
 }
 
-struct InterCode* makeInterCode(enum IcType icType){
-    struct InterCode* newIc = (struct InterCode*)malloc(sizeof(struct InterCode));
-    newIc->icType = icType;
-    return newIc;
-}
-
-struct CodeList* makeCodeList(struct InterCode* ic){
-    struct CodeList* newCl = (struct CodeList*)malloc(sizeof(struct CodeList));
-    newCl->last = NULL;
-    newCl->next = NULL;
-    newCl->interCode = ic;
-    return newCl;
-}
 
 struct CodeList* trans_CompSt(struct Node* node){
     debugPrint("start of trans_CompSt");
@@ -121,6 +182,81 @@ struct CodeList* trans_CompSt(struct Node* node){
         stmtList = trans_StmtList(child->rightbrother);
     }
     return concat(defList, stmtList);
+}
+
+struct CodeList* trans_DefList(struct Node* node){
+    if (node == NULL)
+        return NULL;
+    struct CodeList* cl1 = NULL;
+    while (node != NULL){
+        cl1 = concat(cl1, trans_Def(node->leftchild));
+        node = node->leftchild->rightbrother;
+    }
+    return cl1;
+}
+
+struct CodeList* trans_Def(struct Node* node){
+    struct Node* child = node->leftchild;
+    struct Operand* op = trans_Specifier(child);
+    return trans_DecList(child->rightbrother, op);
+}
+
+struct Operand* trans_Specifier(struct Node* node){
+    if (node == NULL)
+        return NULL;
+    struct Node* child = node->leftchild;
+
+    
+    struct Operand* op = makeOperand(OP_VARIABLE);
+    return op;
+}
+
+struct CodeList* trans_DecList(struct Node* node, struct Operand* operand){
+    if (node == NULL)
+        return NULL;
+    struct CodeList* cl1 = trans_Dec(node->leftchild, operand);
+    struct CodeList* cl2 = trans_DecList(node->leftchild->rightbrother->rightbrother, operand);
+    return concat(cl1, cl2);
+}
+
+struct CodeList* trans_Dec(struct Node* node, struct Operand* operand){
+    struct Node* child = node->leftchild;
+    if (child->rightbrother == NULL){//VarDec
+            trans_VarDec(child, operand);
+            return NULL;
+    }
+    else{//VarDec ASSIGNOP Exp
+        trans_VarDec(child, operand);
+        struct Operand* op1 = makeOperand(OP_TEMP);
+        struct CodeList* cl1 = trans_Exp(child->right, operand);
+        struct InterCode* ic1 = makeInterCode(IC_ASSIGN);
+        ic1->info.assign.leftOp = operand;
+        ic1->info,assign.rightOp = op1;
+        struct CodeList* cl2 = makeCodeList(ic1);
+        return concat(cl1, cl2);
+    }
+}
+
+void trans_VarDec(struct Node* node, struct Operand* operand){
+    if(node == NULL)
+        return NULL;
+    struct Node* child = node->leftchild;
+
+    if (child->rightbrother == NULL){// ID
+        strcpy(operand->name, child->strval);
+        insertOperandHashNode(child->strval, operand);
+        return ;
+    }
+    //VarDec LB INT RB
+    struct Operand* op = (struct Operand*)malloc(sizeof(struct Operand));
+    op->opType = OP_ARRAY;
+    op->info.variableNo = operand->info.variableNo;
+    struct TypeNode* typeArr = (struct TypeNode*)malloc(sizeof(struct TypeNode));
+    typeArr->type = ARRAY;
+    typeArr->info.array.size = child->rightbrother->rightbrother->intval;
+    typeArr->info.array.type = operand->type;
+    op->type = typeArr;
+    trans_VarDec(child, op);
 }
 
 struct CodeList* trans_StmtList(struct Node* node){
@@ -152,6 +288,14 @@ struct CodeList* trans_StmtList(struct Node* node){
     return clStart;
 }
 
+struct CodeList* makeIc(struct Operand* valOperand, struct Operand* leftOperand, struct Operand* rightOperand, enum IcType icType){
+    if (icType == IC_RETURN){
+    	struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
+    	ic->icType = icType;
+    	
+    }
+}
+
 struct CodeList* trans_Stmt(struct Node* node){
     debugPrint("start of trans_Stmt");
     if (node == NULL){
@@ -166,7 +310,7 @@ struct CodeList* trans_Stmt(struct Node* node){
         return trans_CompSt(child);
     }
     if (strcmp(child->name, "RETURN") == 0){//RETURN Exp SEMI
-        struct Operand* operand = makeTempOperand();
+        struct Operand* operand = makeOperand(OP_TEMP);
         struct CodeList* cl1 = trans_Exp(child->rightbrother, operand);
         struct CodeList* cl2 = makeIc(NULL, operand, NULL, IC_RETURN);
         return concat(cl1, cl2);
@@ -242,6 +386,8 @@ struct CodeList* trans_Cond(struct Node* node, struct InterCode* trueLabel, stru
     struct CodeList* cl3 = makeGotoIc(falseLabel);
     return concat(concat(cl1, cl2), cl3);
 }
+
+
 
 struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
     debugPrint("start of trans_Exp");
@@ -525,7 +671,7 @@ int insertOperandHashNode(char* name,struct Operand* operand){
     }
 }
 
-struct Operand* lookUpOperand(char* name, enum OpType opType){
+struct Operand* lookUpOperand(char* name){
     struct Operand* op = operandHashFind(name);
     if (op != NULL){
         return op;
@@ -545,3 +691,28 @@ struct Operand* lookUpOperand(char* name, enum OpType opType){
     insertOperandHashNode(name, op);
     return op;
 }
+
+struct Operand* makeOperand(enum OpType opType){
+    struct Operand* op = (struct Operand*)malloc(sizeof(struct Operand));
+    op->opType = opType;
+    op->type = NULL;
+    op->isParam = 0;
+    if (opType == OP_VARIABLE){
+        op->info.variableNo = variableNum;
+        variableNum += 1;
+        return op;
+    }
+    if (opType == OP_LABEL){
+        op->info.labelNo = labelNum;
+        labelNum += 1;
+        return op;
+    }
+    if (opType == OP_TEMP){
+        op->info.tempNo = tempNum;
+        tempNum += 1;
+        return op;
+    }
+    return op;
+}
+
+

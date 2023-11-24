@@ -34,8 +34,15 @@ int main(int argc, char** argv){
             if (DEBUG_FLAG)
                 printf("DEBUG: printtree done\n");
             checkSema(Root);
-
-
+	    struct CodeList* clHead = startInterCode(Root);
+	    if (argv[2] == NULL){
+	    	irFile = fopen("output", "w");
+	    }
+	    else{
+	    	irFile = fopen(argv[2], "w");
+	    }
+	    writeIR(clHead, irFile);
+	    fclose(irFile);
         }
         TearsDown(Root);
         return 0;

@@ -19,9 +19,6 @@ enum {
     IC_SUB,
     IC_MUL,
     IC_DIV,
-    IC_ASSIGN_ADDR,// x = &y
-    IC_ASSIGN_ADDR_VAL,// x = *y
-    IC_ADDR_VAL_ASSIGN,// *x = y
     IC_GOTO,
     IC_RELOP_GOTO,
     IC_RETURN,
@@ -44,6 +41,7 @@ struct Operand{
         int tempNo;
     } info;
     
+    char name[32];
     struct Type* type;
     int isParam;
 };
@@ -56,9 +54,6 @@ struct InterCode{
         char funcName[32];
         struct {struct Operand* rightOp, leftOp;} assign;
         struct {struct Operand* result, op1, op2;} binOp;
-        struct {struct Operand* rightOp, leftOp;} assignAddr;
-        struct {struct Operand* rightOp, leftOp;} assignAddrVal;
-        struct {struct Operand* rightOp, leftOp;} addrValAssign;
         int gotoNo;
         struct {struct Operand* leftRelOp, rightRelOp; char* relOp; int gotoNo;} relGoto;
         struct Operand* retOp;
@@ -82,11 +77,12 @@ struct ArgList{
     struct ArgList* next;
 };
 
+/*
 struct Variable{
     char* name;
     struct Operand* operand;
     struct Variable* next;
-};
+};*/
 
 struct OperandHashNode{
     char nodeName[NAME_LEN];
@@ -98,7 +94,7 @@ struct OperandHashNode{
 struct OperandHashNode* operandTable[HASH_NUM];
 int variableNum, labelNum, tempNum;
 struct CodeList codeHead, codeTail;
-struct Variable variableHead, variableTail;
+//struct Variable variableHead, variableTail;
 
 extern int hashNumOf(char*); //calculate Hashing num
 
@@ -111,27 +107,37 @@ int insertOperandHashNode(char* name,struct Operand* operand); //create hashNode
 struct Operand* lookUpOperand(char* name);
 
 
-struct CodeList* startInterCode(struct Node* rootNode);
+struct CodeList* startInterCode(struct Node* rootNode);//
 
-struct CodeList* trans_ExtDef(struct Node* node);
+struct CodeList* trans_ExtDef(struct Node* node);//
 
-struct CodeList* trans_FunDec(struct Node* node);
+struct CodeList* trans_FunDec(struct Node* node);//
 
-struct CodeList* trans_CompSt(struct Node* node);
+struct CodeList* trans_CompSt(struct Node* node);//
 
-struct CodeList* trans_DefList(struct Node* node);
+struct CodeList* trans_DefList(struct Node* node);//
 
-struct CodeList* trans_StmtList(struct Node* node);
+struct CodeList* trans_Def(struct Node* node);//
 
-struct CodeList* trans_Stmt(struct Node* node);
+struct Operand* trans_Specifier(struct Node* node);//
 
-struct CodeList* trans_Exp(struct Node* node, struct Operand* operand);
+struct CodeList* trans_DecList(struct Node* node, struct Operand* operand);//
 
-struct CodeList* concat(struct CodeList* cl1, struct CodeList* cl2);
+struct CodeList* trans_Dec(struct Node* node, struct Operand* operand);//
 
-struct InterCode* makeInterCode(enum IcType icType);
+void trans_VarDec(struct Node* node, struct Operand* operand);//
 
-struct Operand* makeTempOperand();
+struct CodeList* trans_StmtList(struct Node* node);//
+
+struct CodeList* trans_Stmt(struct Node* node);//
+
+struct CodeList* trans_Exp(struct Node* node, struct Operand* operand);//
+
+struct CodeList* concat(struct CodeList* cl1, struct CodeList* cl2);//
+
+struct InterCode* makeInterCode(enum IcType icType);//
+
+struct CodeList* makeCodeList(struct InterCode* interCode);//
 
 struct Operand* makeConstInt(int val);
 
@@ -151,7 +157,11 @@ struct CodeList* makeArgIc(struct Operand* arg);
 
 struct CodeList* trans_Cond(struct Node* node, struct InterCode* trueLabel, struct InterCode* falseLabel);
 
-struct InterCode* makeLabel();
+struct Operand* makeOperand(enum OpType opType);
+
+void insertIR(struct CodeList* codeList);
+
+struct CodeList* makeParamCl(struct Operand* operand)
 
 #define debugPrint(msg) \
         if (DEBUG_FLAG){ \

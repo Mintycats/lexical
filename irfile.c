@@ -37,6 +37,13 @@ struct CodeList* startInterCode(struct Node* rootNode){
     variableNum = 1;
     labelNum = 1;
     tempNum = 1;
+    
+    constZero = makeOperand(OP_CONSTANT);
+    constZero->info.val = 0;
+    
+    constOne = makeOperand(OP_CONSTANT);
+    constOne->info.val = 1;
+    
 
     struct Node* node = rootNode->leftchild;
     while (node != NULL){
@@ -85,12 +92,6 @@ struct CodeList* trans_ExtDef(struct Node* node){
     return concat(codeList1, codeList2);
 }
 
-struct InterCode* makeInterCode(enum IcType icType){
-    struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
-    ic->icType = icType;
-    return ic;
-}
-
 struct CodeList* makeCodeList(struct InterCode* interCode){
     struct CodeList* cl = (struct CodeList*)malloc(sizeof(struct CodeList));
     cl->interCode = interCode;
@@ -117,12 +118,12 @@ struct CodeList* trans_FunDec(struct Node* node){
         return NULL;
     }
     if (child->rightbrother->rightbrother->rightbrother == NULL){//ID LP RP
-        struct InterCode* interCode = makeInterCode(IC_FUNCTION);
+        struct InterCode* interCode = makeIc(NULL, NULL, NULL, IC_FUNCTION);
         strcpy(interCode->info.funcName, child->strval);
         struct CodeList codeList = makeCodeList(interCode);
         return codeList;
     }
-    struct InterCode* interCode = makeInterCode(IR_FUNCTION);
+    struct InterCode* interCode = makeInterCode(NULL, NULL, NULL, IR_FUNCTION);
     strcpy(interCode->info.funcName, child->strval);
     struct CodeList* codeList = makeCodeList(interCode);
     struct FieldList* fl = NULL;
@@ -288,11 +289,54 @@ struct CodeList* trans_StmtList(struct Node* node){
     return clStart;
 }
 
-struct CodeList* makeIc(struct Operand* valOperand, struct Operand* leftOperand, struct Operand* rightOperand, enum IcType icType){
+struct InterCode* makeIc(struct Operand* valOperand, struct Operand* leftOperand, struct Operand* rightOperand, enum IcType icType){
     if (icType == IC_RETURN){
     	struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
     	ic->icType = icType;
-    	
+    	ic->info.retOp = leftOperand;
+    	return ic;
+    }
+    if (icType == IC_LABEL){
+    	struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
+    	ic->icType = icType;
+    	ic->info.labelNo = leftOperand->info.labelNo;
+    	return ic;
+    }
+    if (icType == IC_FUNCTION){
+    	struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
+    	ic->icType = icType;
+    	return ic;
+    }
+    if (icType == IC_GOTO){
+    	struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
+    	ic->icType = icType;
+    	ic->info.gotoNo = leftOperand->info.labelNo;
+    	return ic;
+    }
+    if (icType ==  IC_ASSIGN){
+    	struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
+    	ic->icType = icType;
+    	ic->info.assign.leftOp = leftOperand;
+    	ic->info.assign.rightOp = rightOperand;
+    	return ic;
+    }
+    if (icType ==  IC_ASSIGN_ADDR){
+    	struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
+    	ic->icType = icType;
+    	ic->info.assignAddr.leftOp = leftOperand;
+    	ic->info.assignAddr.rightOp = rightOperand;
+    	return ic;
+    }
+    if (icType == IC_ADD || icType == IC_SUB || icType == IC_MUL || icType == IC_DIV){
+        struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
+    	ic->icType = icType;
+    	ic->info.binOp.result = valOperand;
+    	ic->info.binOp.op1 = leftOperand;
+    	ic->info.binOp.op2 = rightOperand;
+    	return ic;
+    }
+    if (icType == IC_READ){
+    
     }
 }
 
@@ -312,78 +356,89 @@ struct CodeList* trans_Stmt(struct Node* node){
     if (strcmp(child->name, "RETURN") == 0){//RETURN Exp SEMI
         struct Operand* operand = makeOperand(OP_TEMP);
         struct CodeList* cl1 = trans_Exp(child->rightbrother, operand);
-        struct CodeList* cl2 = makeIc(NULL, operand, NULL, IC_RETURN);
+        struct CodeList* cl2 = makeCodeList(makeIc(NULL, operand, NULL, IC_RETURN));
         return concat(cl1, cl2);
     }
     if (strcmp(child->name, "IF") == 0 && child->rightbrother->rightbrother->rightbrother->rightbrother->rightbrother == NULL){//IF LP Exp RP Stmt
-        struct InterCode* ic1 = makeLabel();
-        struct InterCode* ic2 = makeLabel();
-        struct CodeList* cl1 = trans_Cond(child->rightbrother->rightbrother, ic1, ic2);
+        struct Operand* op1 = makeOperand(OP_LABEL);
+        struct Operand* op2 = makeOperand(OP_LABEL);
+        struct CodeList* cl1 = trans_Cond(child->rightbrother->rightbrother, op1, op2);
         struct CodeList* cl2 = trans_Stmt(child->rightbrother->rightbrother->rightbrother->rightbrother);
-        struct CodeList* cl3 = makeIc(NULL, ic1, NULL, IC_LABEL);
-        struct CodeList* cl4 = makeIc(NULL, ic2, NULL, IC_LABEL);
+        struct CodeList* cl3 = makeCodeList(makeIc(NULL, op1, NULL, IC_LABEL));
+        struct CodeList* cl4 = makeCodeList(makeIc(NULL, op2, NULL, IC_LABEL));
         return concat(concat(cl1, cl3), concat(cl2, cl4));
     }
     else if (strcmp(child->name, "IF") == 0){//IF LP Exp RP Stmt ElSE Stmt
-        struct InterCode* ic1 = makeLabel();
-        struct InterCode* ic2 = makeLabel();
-        struct InterCode* ic3 = makeLabel();
-        struct CodeList* cl1 = trans_Cond(child->rightbrother->rightbrother, ic1, ic2);
+        struct Operand* op1 = makeOperand(OP_LABEL);
+        struct Operand* op2 = makeOperand(OP_LABEL);
+        struct Operand* op3 = makeOperand(OP_LABEL);
+        struct CodeList* cl1 = trans_Cond(child->rightbrother->rightbrother, op1, op2);
         struct CodeList* cl2 = trans_Stmt(child->rightbrother->rightbrother->rightbrother->rightbrother);
-        struct CodeList* cl3 = makeIc(NULL, ic1, NULL, IC_LABEL);
-        struct CodeList* cl4 = makeIc(NULL, ic2, NULL, IC_LABEL);
+        struct CodeList* cl3 = makeCodeList(makeIc(NULL, op1, NULL, IC_LABEL));
+        struct CodeList* cl4 = makeCodeList(makeIc(NULL, op2, NULL, IC_LABEL));
         struct CodeList* cl5 = trans_Stmt(child->rightbrother->rightbrother->rightbrother->rightbrother->rightbrother->rightbrother);
-        struct CodeList* cl6 = makeIc(NULL, ic3, NULL, IC_LABEL);
-        return concat(concat(concat(cl1, cl3), concat(cl2, cl4)), concat(cl5, cl6));
+        struct CodeList* cl6 = makeCodeList(makeIc(NULL, op3, NULL, IC_LABEL));
+        struct CodeList* cl7 = makeCodeList(makeIc(NULL, op3, NULL, IC_GOTO));
+        return concat(concat(concat(cl1, cl3), concat(cl2, cl7)), concat(concat(cl4, cl5), cl6));
     }
     if (strcmp(child->name, "WHILE") == 0){//WHILE LP Exp RP Stmt
-        struct InterCode* ic1 = makeLabel();
-        struct InterCode* ic2 = makeLabel();
-        struct InterCode* ic3 = makeLabel();
-        struct CodeList* cl1 = trans_Cond(child->rightbrother->rightbrother, ic2, ic3);
+        struct Operand* op1 = makeOperand(OP_LABEL);
+        struct Operand* op2 = makeOperand(OP_LABEL);
+        struct Operand* op3 = makeOperand(OP_LABEL);
+        struct CodeList* cl1 = trans_Cond(child->rightbrother->rightbrother, op2, op3);
         struct CodeList* cl2 = trans_Stmt(child->rightbrother->rightbrother->rightbrother->rightbrother);
-        struct CodeList* cl3 = makeIc(NULL, ic1, NULL, IC_LABEL);
-        struct CodeList* cl4 = makeIc(NULL, ic2, NULL, IC_LABEL);
-        struct CodeList* cl5 = makeIc(NULL, ic3, NULL, IC_LABEL);
-        struct CodeList* cl6 = makeIc(NULL, ic2, NULL, IC_GOTO);
+        struct CodeList* cl3 = makeCodeList(makeIc(NULL, op1, NULL, IC_LABEL));
+        struct CodeList* cl4 = makeCodeList(makeIc(NULL, op2, NULL, IC_LABEL));
+        struct CodeList* cl5 = makeCodeList(makeIc(NULL, op3, NULL, IC_LABEL));
+        struct CodeList* cl6 = makeCodeList(makeIc(NULL, op1, NULL, IC_GOTO));
         return concat(concat(concat(cl3, cl1), concat(cl4, cl2)), concat(cl6, cl5));
     }
     return NULL;
 }
 
-struct CodeList* trans_Cond(struct Node* node, struct InterCode* trueLabel, struct InterCode* falseLabel){
+struct InterCode* makeIfIc(char* relOp, struct Operand* operand1, struct Operand* operand2, struct Operand* trueLabel){
+    struct InterCode* ic = (struct InterCode*)malloc(sizeof(struct InterCode));
+    ic->icType == IC_RELOP_GOTO;
+    syrcpy(ic->info.relGoto.relOp, relOp);
+    ic->info.relGoto.leftRelOp = operand1;
+    ic->info.relGoto.rightRelOp = operand2;
+    ic->info.relGoto.gotoNo = trueLabel->info.labelNo;
+    return ic;
+}
+
+struct CodeList* trans_Cond(struct Node* node, struct Operand* trueLabel, struct Operand* falseLabel){
     struct Node* child = node->leftchild;
     if (strcmp(child->name, "Exp") == 0 && strcmp(child->rightbrother->name, "RELOP") == 0){
-        struct Operand* op1 = makeTempOperand();
-        struct Operand* op2 = makeTempOperand();
+        struct Operand* op1 = makeOperand(OP_TEMP);
+        struct Operand* op2 = makeOperand(OP_TEMP);
         struct CodeList* cl1 = trans_Exp(child, op1);
         struct CodeList* cl2 = trans_Exp(child->rightbrother->rightbrother, op2);
-        struct CodeList* cl3 = makeIfIc(child->rightbrother->strval, op1, op2, trueLabel);
-        struct CodeList* cl4 = makeGotoIc(falseLabel);
+        struct CodeList* cl3 = makeCodeList(makeIfIc(child->rightbrother->strval, op1, op2, trueLabel));
+        struct CodeList* cl4 = makeCodeList(makeIc(NULL, falseLabel, NULL, IC_GOTO));
         return concat(concat(cl1, cl2), concat(cl3, cl4));
     }
     if (strcmp(child->name, "NOT") == 0){//NOT Exp
         return trans_Cond(child->rightbrother, falseLabel, trueLabel);
     }
     if (strcmp(child->name, "Exp") == 0 && strcmp(child->rightbrother->name, "AND") == 0){
-        struct InterCode* label1 = makeLabel();
+        struct Operand* label1 = makeOperand(OP_LABEL);
         struct CodeList* cl1 = trans_Cond(child, label1, falseLabel);
         struct CodeList* cl2 = trans_Cond(child->rightbrother->rightbrother, trueLabel, falseLabel);
-        struct CodeList* cl3 = makeLabelIc(label1);
+        struct CodeList* cl3 = makeCodeList(makeIc(NULL, label1, NULL, IC_LABEL));
         return concat(concat(cl1, cl3), cl2);
     }
     if (strcmp(child->name, "Exp") == 0 && strcmp(child->rightbrother->name, "OR") == 0){//Exp OR Exp
-        struct InterCode* label1 = makeLabel();
+        struct Operand* label1 = makeOperand(OP_LABEL);
         struct CodeList* cl1 = trans_Cond(child, trueLabel, label1);
         struct CodeList* cl2 = trans_Cond(child->rightbrother->rightbrother, trueLabel, falseLabel);
-        struct CodeList* cl3 = makeLabelIc(label1);
+        struct CodeList* cl3 = makeCodeList(makeIc(NULL, label1, NULL, IC_LABEL));
         return concat(concat(cl1, cl3), cl2);
     }
     //else
-    struct Operand* op1 = makeTempOperand();
+    struct Operand* op1 = makeOperand(OP_TEMP);
     struct CodeList* cl1 = trans_Exp(node, op1);
     struct CodeList* cl2 = makeIfIc("!=", op1, constZero, trueLabel);
-    struct CodeList* cl3 = makeGotoIc(falseLabel);
+    struct CodeList* cl3 = makeCodeList(makeIc(NULL, falseLabel,  NULL, IC_GOTO));
     return concat(concat(cl1, cl2), cl3);
 }
 
@@ -395,117 +450,116 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
     if (strcmp(child->name, "ID") == 0 && child->rightbrother == NULL){//ID
         struct Operand* op = lookUpOperand(str);
         if (op->opType == OP_ARRAY && op->opType == OP_STRUCT){
-            struct InterCode* ic = makeInterCode(IC_ASSIGN_ADDR);
-            ic->info.assignAddr.leftOp = operand;
-            ic->info.assignAddr.rightOp = op;
+            struct InterCode* ic = makeIc(NULL, operand, op, IC_ASSIGN_ADDR);
             return makeCodeList(ic);
         }else{
-            struct InterCode* ic = makeInterCode(IC_ASSIGN);
-            ic->info.assign.leftOp = operand;
-            ic->info.assign.rightOp = op;
+            struct InterCode* ic = makeIc(NULL, operand, op, IC_ASSIGN);
             return makeCodeList(ic);
         }
     }
     if (strcmp(child->name, "INT") == 0 || strcmp(child->name, "FLOAT") == 0){//INT || FLOAT
         int intVal = child->intval;
-        struct InterCode* ic = makeInterCode(IC_ASSIGN);
-        ic->info.assign.leftOp = operand;
-        ic->info.assign.rightOp = makeConstInt(intval);
+        struct Operand* constOp = makeOperand(OP_CONSTANT);
+        constOp->info.val = intVal;
+        struct InterCode* ic = makeIc(NULL, operand, constOp, IC_ASSIGN);
         return makeCodeList(ic);
     }
     if (strcmp(child->name, "Exp") == 0 && strcmp(child->rightbrother->rightbrother->name, "Exp") == 0 && child->rightbrother->rightbrother->rightbrother == NULL){//Exp op Exp
         
         if (strcmp(child->rightbrother->name, "ASSIGNOP") == 0){
-            struct Operand* tmpOp2 = makeTempOperand();
-            struct Operand* leftVari = lookUp(findId(child));
-            struct CodeList* cl1 = trans_Exp(child->rightbrother->rightbrother, tmpOp2);
-            struct CodeList* cl2 = makeIc(NULL, leftVari, tmpOp2, IC_ASSIGN);
-            struct CodeList* cl3 = makeIc(NULL, operand, leftVari, IC_ASSIGN);
-            return  concat(cl1, concat(cl2, cl3));
+            if (strcmp(child->leftchild->name, "ID") == 0){//ID ASSIGN Exp
+            	struct Operand* tmpOp2 = makeOperand(OP_TEMP);
+            	struct Operand* leftVari = lookUpOperand(child->leftchild->strval);
+            	struct CodeList* cl1 = trans_Exp(child->rightbrother->rightbrother, tmpOp2);
+            	struct CodeList* cl2 = makeCodeList(makeIc(NULL, leftVari, tmpOp2, IC_ASSIGN));
+            	struct CodeList* cl3 = makeCodeList(makeIc(NULL, operand, leftVari, IC_ASSIGN));
+            	return  concat(cl1, concat(cl2, cl3));
+            }
+            else{//Exp ASSIGN Exp
+            	
+            }
         }
         else if (strcmp(child->rightbrother->name, "AND") == 0){
-            struct InterCode* label1 = makeLabel();
-            struct InterCode* label2 = makeLabel();
-            struct CodeList* cl1 = makeIc(NULL, operand, constZero);
+            struct Operand* label1 = makeOperand(OP_LABEL);
+            struct Operand* label2 = makeOperand(OP_LABEL);
+            struct CodeList* cl1 = makeCodeList(makeIc(NULL, operand, constZero, IC_ASSIGN));
             struct CodeList* cl2 = trans_cond(node, label1, label2);
-            struct CodeList* cl3 = makeIc(NULL, label1, NULL, IC_LABEL);
-            struct CodeList* cl4 = makeIc(NULL, operand, constOne, IC_ASSIGN);
-            struct CodeList* cl5 = makeIc(NULL, label2, NULL, IC_LABEL);
+            struct CodeList* cl3 = makeCodeList(makeIc(NULL, label1, NULL, IC_LABEL));
+            struct CodeList* cl4 = makeCodeList(makeIc(NULL, operand, constOne, IC_ASSIGN));
+            struct CodeList* cl5 = makeCodeList(makeIc(NULL, label2, NULL, IC_LABEL));
             return concat(concat(concat(concat(cl1, cl2), cl3), cl4), cl5);
         }
         else if (strcmp(child->rightbrother->name, "OR") == 0){
-            struct InterCode* label1 = makeLabel();
-            struct InterCode* label2 = makeLabel();
-            struct CodeList* cl1 = makeIc(NULL, operand, constZero);
+            struct Operand* label1 = makeOperand(OP_LABEL);
+            struct Operand* label2 = makeOperand(OP_LABEL);
+            struct CodeList* cl1 = makeCodeList(makeIc(NULL, operand, constZero, IC_ASSIGN));
             struct CodeList* cl2 = trans_cond(node, label1, label2);
-            struct CodeList* cl3 = makeIc(NULL, label1, NULL, IC_LABEL);
-            struct CodeList* cl4 = makeIc(NULL, operand, constOne, IC_ASSIGN);
-            struct CodeList* cl5 = makeIc(NULL, label2, NULL, IC_LABEL);
+            struct CodeList* cl3 = makeCodeList(makeIc(NULL, label1, NULL, IC_LABEL));
+            struct CodeList* cl4 = makeCodeList(makeIc(NULL, operand, constOne, IC_ASSIGN));
+            struct CodeList* cl5 = makeCodeList(makeIc(NULL, label2, NULL, IC_LABEL));
             return concat(concat(concat(concat(cl1, cl2), cl3), cl4), cl5);
         }
         else if (strcmp(child->rightbrother->name, "RELOP") == 0){
-            struct InterCode* label1 = makeLabel();
-            struct InterCode* label2 = makeLabel();
-            struct CodeList* cl1 = makeIc(NULL, operand, constZero);
+            struct Operand* label1 = makeOperand(OP_LABEL);
+            struct Operand* label2 = makeOperand(OP_LABEL);
+            struct CodeList* cl1 = makeCodeList(makeIc(NULL, operand, constZero, IC_ASSIGN));
             struct CodeList* cl2 = trans_cond(node, label1, label2);
-            struct CodeList* cl3 = makeIc(NULL, label1, NULL, IC_LABEL);
-            struct CodeList* cl4 = makeIc(NULL, operand, constOne, IC_ASSIGN);
-            struct CodeList* cl5 = makeIc(NULL, label2, NULL, IC_LABEL);
+            struct CodeList* cl3 = makeCodeList(makeIc(NULL, label1, NULL, IC_LABEL));
+            struct CodeList* cl4 = makeCodeList(makeIc(NULL, operand, constOne, IC_ASSIGN));
+            struct CodeList* cl5 = makeCodeList(makeIc(NULL, label2, NULL, IC_LABEL));
             return concat(concat(concat(concat(cl1, cl2), cl3), cl4), cl5);
         }
         else if (strcmp(child->rightbrother->name, "PLUS") == 0){
-            struct Operand* tmpOp1 = makeTempOperand();
-            struct Operand* tmpOp2 = makeTempOperand();
+            struct Operand* tmpOp1 = makeOperand(OP_TEMP);
+            struct Operand* tmpOp2 = makeOperand(OP_TEMP);
             struct CodeList* cl1 = trans_Exp(child, tmpOp1);
             struct CodeList* cl2 = trans_Exp(child->rightbrother->rightbrother, tmpOp2);
-            struct CodeList* cl3 = makeIc(operand, tmpOp1, tmpOp2, IC_ADD);
+            struct CodeList* cl3 = makeCodeList(makeIc(operand, tmpOp1, tmpOp2, IC_ADD));
             return concat(concat(cl1, cl2), cl3);
         }
         else if (strcmp(child->rightbrother->name, "MINUS") == 0){
-            struct Operand* tmpOp1 = makeTempOperand();
-            struct Operand* tmpOp2 = makeTempOperand();
+            struct Operand* tmpOp1 = makeOperand(OP_TEMP);
+            struct Operand* tmpOp2 = makeOperand(OP_TEMP);
             struct CodeList* cl1 = trans_Exp(child, tmpOp1);
             struct CodeList* cl2 = trans_Exp(child->rightbrother->rightbrother, tmpOp2);
-            struct CodeList* cl3 = makeIc(operand, tmpOp1, tmpOp2, IC_SUB);
+            struct CodeList* cl3 = makeCodeList(makeIc(operand, tmpOp1, tmpOp2, IC_SUB));
             return concat(concat(cl1, cl2), cl3);
         }
         else if (strcmp(child->rightbrother->name, "STAR") == 0){
-            struct Operand* tmpOp1 = makeTempOperand();
-            struct Operand* tmpOp2 = makeTempOperand();
+            struct Operand* tmpOp1 = makeOperand(OP_TEMP);
+            struct Operand* tmpOp2 = makeOperand(OP_TEMP);
             struct CodeList* cl1 = trans_Exp(child, tmpOp1);
             struct CodeList* cl2 = trans_Exp(child->rightbrother->rightbrother, tmpOp2);
-            struct CodeList* cl3 = makeIc(operand, tmpOp1, tmpOp2, IC_STAR);
+            struct CodeList* cl3 = makeCodeList(makeIc(operand, tmpOp1, tmpOp2, IC_MUL));
             return concat(concat(cl1, cl2), cl3);
         }
         else if (strcmp(child->rightbrother->name, "DIV") == 0){
-            struct Operand* tmpOp1 = makeTempOperand();
-            struct Operand* tmpOp2 = makeTempOperand();
+            struct Operand* tmpOp1 = makeOperand(OP_TEMP);
+            struct Operand* tmpOp2 = makeOperand(OP_TEMP);
             struct CodeList* cl1 = trans_Exp(child, tmpOp1);
             struct CodeList* cl2 = trans_Exp(child->rightbrother->rightbrother, tmpOp2);
-            struct CodeList* cl3 = makeIc(operand, tmpOp1, tmpOp2, IC_DIV);
+            struct CodeList* cl3 = makeCodeList(makeIc(operand, tmpOp1, tmpOp2, IC_DIV));
             return concat(concat(cl1, cl2), cl3);
         }
-        
-
     }
     if (strcmp(child->name, "LP") == 0){//LP Exp RP
         struct CodeList* cl1 = trans_Exp(child->rightbrother, operand);
         return cl1;
     }
     if (strcmp(child->name, "MINUS") == 0){//MINUS Exp
-        struct Operand* tmp1 = makeTempOperand();
+        struct Operand* tmp1 = makeOperand(OP_TEMP);
         struct CodeList* cl1 = trans_Exp(child->rightbrother, tmp1);
-        struct CodeList* cl2 = makeIc(operand, constZero, tmp1, IC_SUB);
+        struct CodeList* cl2 = makeCodeList(makeIc(operand, constZero, tmp1, IC_SUB));
         return concat(cl1, cl2);
     }
     if (strcmp(child->name, "NOT") == 0){//NOT Exp
-        struct InterCode* label1 = makeLabel();
-        struct InterCode* label2 = makeLabel();
-        struct CodeList* cl1 = makeIc(NULL, operand, constZero);
+        struct Operand* label1 = makeOperand(OP_LABEL);
+        struct Operand* label2 = makeOperand(OP_LABEL);
+        struct CodeList* cl1 = makeCodeList(makeIc(NULL, operand, constZero, IC_ASSIGN));
         struct CodeList* cl2 = trans_cond(node, label1, label2);
-        struct CodeList* cl3 = makeIc(NULL, label1, NULL, IC_LABEL);
-        struct CodeList* cl4 = makeIc(NULL, operand, constOne, IC_ASSIGN);
-        struct CodeList* cl5 = makeIc(NULL, label2, NULL, IC_LABEL);
+        struct CodeList* cl3 = makeCodeList(makeIc(NULL, label1, NULL, IC_LABEL));
+        struct CodeList* cl4 = makeCodeList(makeIc(NULL, operand, constOne, IC_ASSIGN));
+        struct CodeList* cl5 = makeCodeList(makeIc(NULL, label2, NULL, IC_LABEL));
         return concat(concat(concat(concat(cl1, cl2), cl3), cl4), cl5);
     }
     if (strcmp(child->name, "ID") == 0 && strcmp(child->rightbrother->name, "LP") == 0 && strcmp(child->rightbrother->rightbrother->name, "RP") == 0){//ID LP RP
@@ -513,7 +567,7 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
         if (tmpHash == NULL)
             return NULL;
         struct Function* func = tmpHash->type->info.function;
-        if (strcmp(func->name, "read")){
+        if (strcmp(func->name, "read") == 0){
             return makeIc(NULL, operand, NULL, IC_READ);
         }
         return makeCallIc(operand, func->name);

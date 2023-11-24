@@ -15,6 +15,7 @@ enum {
     IC_LABEL,
     IC_FUNCTION,
     IC_ASSIGN,
+    IC_ASSIGN_ADDR,
     IC_ADD,
     IC_SUB,
     IC_MUL,
@@ -53,6 +54,7 @@ struct InterCode{
         int labelNo;
         char funcName[32];
         struct {struct Operand* rightOp, leftOp;} assign;
+        struct {struct Operand* rightOp, leftOp;} assignAddr;
         struct {struct Operand* result, op1, op2;} binOp;
         int gotoNo;
         struct {struct Operand* leftRelOp, rightRelOp; char* relOp; int gotoNo;} relGoto;
@@ -93,7 +95,11 @@ struct OperandHashNode{
 
 struct OperandHashNode* operandTable[HASH_NUM];
 int variableNum, labelNum, tempNum;
-struct CodeList codeHead, codeTail;
+struct CodeList* codeHead;
+struct CodeList* codeTail;
+struct Operand* constZero;
+struct Operand* constOne;
+
 //struct Variable variableHead, variableTail;
 
 extern int hashNumOf(char*); //calculate Hashing num
@@ -135,27 +141,19 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand);//
 
 struct CodeList* concat(struct CodeList* cl1, struct CodeList* cl2);//
 
-struct InterCode* makeInterCode(enum IcType icType);//
-
 struct CodeList* makeCodeList(struct InterCode* interCode);//
 
 struct Operand* makeConstInt(int val);
 
-struct CodeList* makeIc(struct Operand* valOperand, struct Operand* leftOperand, struct Operand* rightOperand, enum IcType icType);
+struct InterCode* makeIc(struct Operand* valOperand, struct Operand* leftOperand, struct Operand* rightOperand, enum IcType icType);
 
-struct CodeList* makeIfIc(char* relOp, struct Operand* operand1, struct Operand* operand2, struct InterCode* trueLabel);
-
-struct CodeList* makeLabelIc(struct InterCode* label);
-
-struct CodeList* makeGotoIc(struct InterCode* label);
+struct InterCode* makeIfIc(char* relOp, struct Operand* operand1, struct Operand* operand2, struct Operand* trueLabel);//
 
 struct CodeList* makeCallIc(struct Operand* leftOp, char* funcName);
 
-struct CodeList* makeWriteIc(struct Operand** argsList);//
-
 struct CodeList* makeArgIc(struct Operand* arg);
 
-struct CodeList* trans_Cond(struct Node* node, struct InterCode* trueLabel, struct InterCode* falseLabel);
+struct CodeList* trans_Cond(struct Node* node, struct Operand* trueLabel, struct Operand* falseLabel);
 
 struct Operand* makeOperand(enum OpType opType);
 

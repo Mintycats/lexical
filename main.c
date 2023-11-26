@@ -2,9 +2,9 @@
 #define STDIO
 #include<stdio.h>
 #endif
-#ifndef SEMA
-#define SEMA
-#include "sema.h"
+#ifndef IR
+#define IR
+#include "irfile.h"
 #endif
 
 //#define DEBUG_FLAG 1
@@ -36,7 +36,7 @@ int main(int argc, char** argv){
             checkSema(Root);
 	    struct CodeList* clHead = startInterCode(Root);
 	    if (argv[2] == NULL){
-	    	irFile = fopen("output", "w");
+	    	irFile = fopen("output.ir", "w");
 	    }
 	    else{
 	    	irFile = fopen(argv[2], "w");

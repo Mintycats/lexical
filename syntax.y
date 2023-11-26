@@ -74,7 +74,7 @@
 %token PLUS MINUS STAR DIV
 %token SEMI COMMA
 %token ASSIGNOP
-%token RELOP
+%token <type_string>RELOP
 %token AND OR NOT
 %token DOT
 %token LP RP
@@ -688,6 +688,7 @@ Exp : Exp ASSIGNOP Exp{
         struct Node* relopnode = MakeNode("RELOP", Val, @2.first_line);
         relopnode->valtype = StringType;
         strcpy(relopnode->strval, $2);
+        //printf("rel %s\n", $2);
         MakeTree($$, $1);
         MakeTree($$, relopnode);
         MakeTree($$, $3);

@@ -86,12 +86,12 @@ UNDEFINE [_a-zA-Z0-9]*
 "," {return COMMA;}
 "." {return DOT;}
 "=" {return ASSIGNOP;}
-">" {return RELOP;}
-"<" {return RELOP;}
-">=" {return RELOP;}
-"<=" {return RELOP;}
-"==" {return RELOP;}
-"!=" {return RELOP;}
+">" {yylval.type_string = strdup(yytext);return RELOP;}
+"<" {yylval.type_string = strdup(yytext);return RELOP;}
+">=" {yylval.type_string = strdup(yytext);return RELOP;}
+"<=" {yylval.type_string = strdup(yytext);return RELOP;}
+"==" {yylval.type_string = strdup(yytext);return RELOP;}
+"!=" {yylval.type_string = strdup(yytext);return RELOP;}
 "&&" {return AND;}
 "||" {return OR;}
 "!" {return NOT;}

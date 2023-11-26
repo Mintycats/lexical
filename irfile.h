@@ -1,21 +1,36 @@
-
-
-
-enum {
+#ifndef HASHING
+#define HASHING
+#include "hashtable.h"
+#endif
+#ifndef STDIO
+#define STDIO
+#include<stdio.h>
+#endif
+#ifndef SEMA
+#define SEMA
+#include "sema.h"
+#endif
+#ifndef DEBUG_FLAG2
+#define DEBUG_FLAG2 1
+#endif
+enum OpType{
     OP_VARIABLE,
     OP_CONSTANT,
     OP_ADDRESS,
     OP_LABEL,
     OP_ARRAY,
     OP_STRUCT,
-    OP_TEMP
-} OpType;
+    OP_TEMP,
+    OP_FUNC
+} ;
 
-enum {
+enum IcType{
     IC_LABEL,
     IC_FUNCTION,
     IC_ASSIGN,
     IC_ASSIGN_ADDR,
+    IC_ASSIGN_ADDR_VAL,
+    IC_ADDR_ASSIGN_VAL,
     IC_ADD,
     IC_SUB,
     IC_MUL,
@@ -29,7 +44,7 @@ enum {
     IC_PARAM,
     IC_READ,
     IC_WRITE
-} IcType;
+} ;
 
 
 struct Operand{
@@ -37,13 +52,14 @@ struct Operand{
 
     union{
         int variableNo;
-        int lableNo;
+        int labelNo;
         int val;
         int tempNo;
     } info;
     
     char name[32];
-    struct Type* type;
+    int vt;//v 0 t 1
+    struct TypeNode* type;
     int isParam;
 };
 
@@ -53,11 +69,12 @@ struct InterCode{
     union{
         int labelNo;
         char funcName[32];
-        struct {struct Operand* rightOp, leftOp;} assign;
-        struct {struct Operand* rightOp, leftOp;} assignAddr;
-        struct {struct Operand* result, op1, op2;} binOp;
+        struct {struct Operand* rightOp; struct Operand* leftOp;} assign;
+        struct {struct Operand* rightOp; struct Operand* leftOp;} assignAddr;
+        struct {struct Operand* rightOp; struct Operand* leftOp;} assignAddrVal;
+        struct {struct Operand* result; struct Operand* op1; struct Operand* op2;} binOp;
         int gotoNo;
-        struct {struct Operand* leftRelOp, rightRelOp; char* relOp; int gotoNo;} relGoto;
+        struct {struct Operand* leftRelOp; struct Operand* rightRelOp; char relOp[3]; int gotoNo;} relGoto;
         struct Operand* retOp;
         struct {struct Operand* operand; int size;} dec;
         struct Operand* argOp;
@@ -69,13 +86,13 @@ struct InterCode{
 };
 
 struct CodeList{
-    struct InterCode interCode;
+    struct InterCode* interCode;
     struct CodeList* last;
     struct CodeList* next;
 };
 
 struct ArgList{
-    struct Operand args;
+    struct Operand* args;
     struct ArgList* next;
 };
 
@@ -99,6 +116,7 @@ struct CodeList* codeHead;
 struct CodeList* codeTail;
 struct Operand* constZero;
 struct Operand* constOne;
+struct Operand* constFour;
 
 //struct Variable variableHead, variableTail;
 
@@ -110,10 +128,12 @@ int operandCheckExist(char* name);//1 exist 0 not
 
 int insertOperandHashNode(char* name,struct Operand* operand); //create hashNode and insert it
 
-struct Operand* lookUpOperand(char* name);
+struct Operand* lookUpOperand(char* name);//
 
 
 struct CodeList* startInterCode(struct Node* rootNode);//
+
+void writeIR(struct CodeList* codeList, FILE* pFile);
 
 struct CodeList* trans_ExtDef(struct Node* node);//
 
@@ -137,32 +157,34 @@ struct CodeList* trans_StmtList(struct Node* node);//
 
 struct CodeList* trans_Stmt(struct Node* node);//
 
+struct InterCode* makeCallIc(struct Operand* operand, char* name);//
+
 struct CodeList* trans_Exp(struct Node* node, struct Operand* operand);//
 
 struct CodeList* concat(struct CodeList* cl1, struct CodeList* cl2);//
 
 struct CodeList* makeCodeList(struct InterCode* interCode);//
 
-struct Operand* makeConstInt(int val);
+struct Operand* makeConstInt(int val);//
 
-struct InterCode* makeIc(struct Operand* valOperand, struct Operand* leftOperand, struct Operand* rightOperand, enum IcType icType);
+struct InterCode* makeIc(struct Operand* valOperand, struct Operand* leftOperand, struct Operand* rightOperand, enum IcType icType);//
 
 struct InterCode* makeIfIc(char* relOp, struct Operand* operand1, struct Operand* operand2, struct Operand* trueLabel);//
 
-struct CodeList* makeCallIc(struct Operand* leftOp, char* funcName);
+struct InterCode* makeArgIc(struct Operand* arg);//
 
-struct CodeList* makeArgIc(struct Operand* arg);
+struct CodeList* trans_Cond(struct Node* node, struct Operand* trueLabel, struct Operand* falseLabel);//
 
-struct CodeList* trans_Cond(struct Node* node, struct Operand* trueLabel, struct Operand* falseLabel);
+struct CodeList* trans_Args(struct Node* node, struct ArgList** args, struct FieldList* fieldList);//
 
-struct Operand* makeOperand(enum OpType opType);
+struct Operand* makeOperand(enum OpType opType);//
 
-void insertIR(struct CodeList* codeList);
+void insertIR(struct CodeList* codeList);//
 
-struct CodeList* makeParamCl(struct Operand* operand)
+struct CodeList* makeParamCl(struct Operand* operand);//
 
 #define debugPrint(msg) \
-        if (DEBUG_FLAG){ \
+        if (DEBUG_FLAG2){ \
             printf("%s\n", msg); \
         }
 

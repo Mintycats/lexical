@@ -135,7 +135,34 @@ void initSema(){
         hashTable[i] = NULL;
         funcTable[i] = NULL;
     }
-
+    
+    struct Function* fun = (struct Function*)malloc(sizeof(struct Function));
+    strcpy(fun->name, "write");
+    fun->type = NULL;
+    fun->param = NULL;
+    struct TypeNode* tp = (struct TypeNode*)malloc(sizeof(struct TypeNode));
+    tp->type = VARIABLE;
+    tp->info.variable = 1;
+    
+    struct FieldList* fl = (struct FieldList*)malloc(sizeof(struct FieldList));
+    strcpy(fl->name, "asdfghjklzxcvbnm");
+    fl->type = tp;
+    fl->next = NULL;
+    fun->param = fl;
+    
+    struct TypeNode* typeNode = (struct TypeNode*)malloc(sizeof(struct TypeNode));
+    typeNode->type = FUNCTION;
+    typeNode->info.function = fun;
+    insertHashNode("write", typeNode);
+    
+    fun = (struct Function*)malloc(sizeof(struct Function));
+    strcpy(fun->name, "read");
+    fun->type = NULL;
+    fun->param = NULL;
+    typeNode = (struct TypeNode*)malloc(sizeof(struct TypeNode));
+    typeNode->type = FUNCTION;
+    typeNode->info.function = fun;
+    insertHashNode("read", typeNode);
 }
 
 void ExtDefList(struct Node* node){
@@ -681,6 +708,7 @@ struct Function* FunDec(struct Node* node, struct TypeNode* typeNode, int isDecl
 }
 
 void semaError(char* type, int lineno, char* msg){
+    return;
     if (isNewError(lineno))
         fprintf(stdout, "Error type %s at Line %d: %s\n", type, lineno, msg);
 }

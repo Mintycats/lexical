@@ -17,6 +17,7 @@ extern struct Node* debugger;
 extern struct Node* debugger2;
 extern void PrintTree(struct Node* rootnode, int spaceNum);
 extern void TearsDown(struct Node* rootnode);
+extern int hasStruct;
 int main(int argc, char** argv){
     FILE* irFile = NULL;
     if (argc > 1){
@@ -33,8 +34,12 @@ int main(int argc, char** argv){
             //PrintTree(Root, 0);
             if (DEBUG_FLAG)
                 printf("DEBUG: printtree done\n");
+            if (hasStruct == 1){
+                fprintf(stdout, "Cannot translate: Code contains variables or parameters of structure type.\n");
+                return 0;
+            }
             checkSema(Root);
-	    struct CodeList* clHead = startInterCode(Root);
+	        struct CodeList* clHead = startInterCode(Root);
 	    if (argv[2] == NULL){
 	    	irFile = fopen("output.ir", "w");
 	    }

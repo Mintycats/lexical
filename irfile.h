@@ -11,7 +11,7 @@
 #include "sema.h"
 #endif
 #ifndef DEBUG_FLAG2
-#define DEBUG_FLAG2 1
+#define DEBUG_FLAG2 0
 #endif
 enum OpType{
     OP_VARIABLE,
@@ -158,6 +158,8 @@ struct CodeList* trans_StmtList(struct Node* node);//
 struct CodeList* trans_Stmt(struct Node* node);//
 
 struct InterCode* makeCallIc(struct Operand* operand, char* name);//
+
+struct CodeList* copyArray(struct Operand* dest, struct Operand* src);//
 
 struct CodeList* trans_Exp(struct Node* node, struct Operand* operand);//
 

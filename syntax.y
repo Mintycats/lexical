@@ -52,6 +52,7 @@
     
     /* declared global value */
     int hasError = 0;
+    int hasStruct = 0;
     int lastErrorLine = 0;
     struct Node* Root = NULL;
 

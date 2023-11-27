@@ -1,8 +1,12 @@
+struct Operands
+{
+    int o1;
+    int o2;
+};
+
 int main()
 {
     int p[2];
-    p[1] = 10;
-    p[0] = p[1];
-    write(p[0]);
+    int a = p[0];
     return 0;
 }

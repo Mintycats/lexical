@@ -1,29 +1,204 @@
-FUNCTION main :
-DEC v1 8
-t3 := &v1
-t4 := #1
-t4 := t4 * #4
-t5 := t3 + t4
-t1 := t5
-t2 := #10
-*t1 := t2
-t8 := &v1
-t9 := #0
-t9 := t9 * #4
-t10 := t8 + t9
-t6 := t10
-t11 := &v1
-t12 := #1
-t12 := t12 * #4
-t13 := t11 + t12
-t7 := t13
-t6 := t7
-t15 := &v1
-t16 := #0
-t16 := t16 * #4
-t17 := t15 + t16
-t14 := t17
-t18 := *t14
-WRITE t18
+FUNCTION Swap :
+PARAM v1
+PARAM v2
+PARAM v3
+t2 := v1
+t3 := v2
+t3 := t3 * #4
+t4 := t2 + t3
+t1 := t4
+v4 := *t1
+t7 := v1
+t8 := v2
+t8 := t8 * #4
+t9 := t7 + t8
+t5 := t9
+t10 := v1
+t11 := v3
+t11 := t11 * #4
+t12 := t10 + t11
+t6 := t12
+t13 := *t6
+*t5 := t13
+t16 := v1
+t17 := v3
+t17 := t17 * #4
+t18 := t16 + t17
+t14 := t18
+t15 := v4
+*t14 := t15
 t19 := #0
 RETURN t19
+FUNCTION Partition :
+PARAM v5
+PARAM v6
+PARAM v7
+t21 := v5
+t22 := v6
+t22 := t22 * #4
+t23 := t21 + t22
+t20 := t23
+v8 := *t20
+LABEL label1 :
+t24 := v6
+t25 := v7
+IF t24 < t25 GOTO label2
+GOTO label3
+LABEL label2 :
+LABEL label4 :
+t26 := v6
+t27 := v7
+IF t26 < t27 GOTO label7
+GOTO label6
+LABEL label7 :
+t30 := v5
+t31 := v7
+t31 := t31 * #4
+t32 := t30 + t31
+t28 := t32
+t33 := *t28
+t29 := v8
+IF t33 >= t29 GOTO label5
+GOTO label6
+LABEL label5 :
+t35 := v7
+t36 := #1
+t34 := t35 - t36
+v7 := t34
+GOTO label4
+LABEL label6 :
+t37 := v5
+t38 := v6
+t39 := v7
+ARG t39
+ARG t38
+ARG t37
+t40 := CALL Swap
+LABEL label8 :
+t41 := v6
+t42 := v7
+IF t41 < t42 GOTO label11
+GOTO label10
+LABEL label11 :
+t45 := v5
+t46 := v6
+t46 := t46 * #4
+t47 := t45 + t46
+t43 := t47
+t48 := *t43
+t44 := v8
+IF t48 <= t44 GOTO label9
+GOTO label10
+LABEL label9 :
+t50 := v6
+t51 := #1
+t49 := t50 + t51
+v6 := t49
+GOTO label8
+LABEL label10 :
+t52 := v5
+t53 := v6
+t54 := v7
+ARG t54
+ARG t53
+ARG t52
+t55 := CALL Swap
+GOTO label1
+LABEL label3 :
+t56 := v6
+RETURN t56
+FUNCTION QuickSort :
+PARAM v9
+PARAM v10
+PARAM v11
+t57 := v10
+t58 := v11
+IF t57 < t58 GOTO label12
+GOTO label13
+LABEL label12 :
+t60 := v9
+t61 := v10
+t62 := v11
+ARG t62
+ARG t61
+ARG t60
+t59 := CALL Partition
+v12 := t59
+t63 := v9
+t64 := v10
+t66 := v12
+t67 := #1
+t65 := t66 - t67
+ARG t65
+ARG t64
+ARG t63
+t68 := CALL QuickSort
+t69 := v9
+t71 := v12
+t72 := #1
+t70 := t71 + t72
+t73 := v11
+ARG t73
+ARG t70
+ARG t69
+t74 := CALL QuickSort
+LABEL label13 :
+t75 := #0
+RETURN t75
+FUNCTION main :
+t76 := #8
+v13 := t76
+DEC v14 32
+t77 := #0
+v15 := t77
+LABEL label14 :
+t78 := v15
+t79 := v13
+IF t78 < t79 GOTO label15
+GOTO label16
+LABEL label15 :
+t82 := &v14
+t83 := v15
+t83 := t83 * #4
+t84 := t82 + t83
+t80 := t84
+READ t81
+*t80 := t81
+t86 := v15
+t87 := #1
+t85 := t86 + t87
+v15 := t85
+GOTO label14
+LABEL label16 :
+t88 := &v14
+t89 := #0
+t91 := v13
+t92 := #1
+t90 := t91 - t92
+ARG t90
+ARG t89
+ARG t88
+t93 := CALL QuickSort
+t94 := #0
+v15 := t94
+LABEL label17 :
+t95 := v15
+t96 := v13
+IF t95 < t96 GOTO label18
+GOTO label19
+LABEL label18 :
+t98 := &v14
+t99 := v15
+t99 := t99 * #4
+t100 := t98 + t99
+t97 := t100
+t101 := *t97
+WRITE t101
+t103 := v15
+t104 := #1
+t102 := t103 + t104
+v15 := t102
+GOTO label17
+LABEL label19 :
+t105 := #0
+RETURN t105

@@ -14,7 +14,7 @@
      extern int PrintError(char, int, char*);
      extern int isNewError(int);
      extern void ErrorPrinter(char, char*);
-
+     extern int hasStruct;
      /*declared global*/
 %}
 
@@ -101,7 +101,7 @@ UNDEFINE [_a-zA-Z0-9]*
 "]" {return RB;}
 "{" {return LC;}
 "}" {return RC;}
-"struct" {return STRUCT;}
+"struct" {hasStruct = 1; return STRUCT;}
 "return" {return RETURN;}
 "if" {return IF;}
 "else" {return ELSE;}

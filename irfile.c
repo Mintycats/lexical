@@ -974,7 +974,12 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
             	struct Operand* tmpOp2 = makeOperand(OP_TEMP);
             	struct Operand* leftVari = lookUpOperand(child->leftchild->strval);
             	struct CodeList* cl1 = trans_Exp(child->rightbrother->rightbrother, tmpOp2);
-            	struct CodeList* cl2 = makeCodeList(makeIc(NULL, leftVari, tmpOp2, IC_ASSIGN));
+                struct CodeList* cl2 = NULL;
+                if (tmpOp2->opType == OP_ARRAY){
+                        cl2 = makeCodeList(makeIc(NULL, leftVari, tmpOp2, IC_ASSIGN_ADDR_VAL));
+                }
+                else
+                	cl2 = makeCodeList(makeIc(NULL, leftVari, tmpOp2, IC_ASSIGN));
                 if (DEBUG_FLAG2){
                     printf("assign::%d\n", operand == NULL);
                 }
@@ -996,7 +1001,13 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
                     debugPrint("111");
                     cl3 = makeCodeList(makeIc(NULL, tmpOp1, tmpOp2, IC_ADDR_ASSIGN_VAL));
                 }
-                else{
+                else if (tmpOp1->opType == OP_ARRAY && tmpOp2->opType == OP_ARRAY){
+                    struct Operand* tmpOp3 = makeOperand(OP_TEMP);
+                    struct InterCode* tmpIc = makeIc(NULL, tmpOp3, tmpOp2, IC_ASSIGN_ADDR_VAL);
+                    struct InterCode* tmpIc2 = makeIc(NULL, tmpOp1, tmpOp3, IC_ADDR_ASSIGN_VAL);
+                    
+                }
+                else {
             	    cl3 = makeCodeList(makeIc(NULL, tmpOp1, tmpOp2, IC_ASSIGN));
                 }
                 debugPrint("Exp assign live1");

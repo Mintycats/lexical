@@ -2,6 +2,7 @@ int main()
 {
     int p[2];
     p[1] = 10;
-    write(p[1]);
+    p[0] = p[1];
+    write(p[0]);
     return 0;
 }

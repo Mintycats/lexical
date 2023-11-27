@@ -71,7 +71,8 @@
 %token <type_int> INT
 %token <type_float> FLOAT
 %token <type_string> ID TYPE
-%token PLUS MINUS STAR DIV
+%token PLUS MINUS
+%token STAR DIV
 %token SEMI COMMA
 %token ASSIGNOP
 %token <type_string>RELOP
@@ -91,9 +92,9 @@
 %left OR
 %left AND
 %left RELOP
-%left PLUS
+%left PLUS MINUS
 %left STAR DIV
-%right MINUS NOT
+%right NOT
 %left LP RP LB RB DOT
 
 

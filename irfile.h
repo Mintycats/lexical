@@ -151,7 +151,7 @@ struct CodeList* trans_DecList(struct Node* node, struct Operand* operand);//
 
 struct CodeList* trans_Dec(struct Node* node, struct Operand* operand);//
 
-void trans_VarDec(struct Node* node, struct Operand* operand);//
+struct CodeList* trans_VarDec(struct Node* node, struct Operand* operand);//
 
 struct CodeList* trans_StmtList(struct Node* node);//
 
@@ -160,6 +160,10 @@ struct CodeList* trans_Stmt(struct Node* node);//
 struct InterCode* makeCallIc(struct Operand* operand, char* name);//
 
 struct CodeList* trans_Exp(struct Node* node, struct Operand* operand);//
+
+int sizeOfArray(struct TypeNode* typeNode);//
+
+int isOneArray(struct TypeNode* typeNode);//
 
 struct CodeList* concat(struct CodeList* cl1, struct CodeList* cl2);//
 

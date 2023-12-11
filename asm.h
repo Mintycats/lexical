@@ -21,5 +21,5 @@ void makeRegName(char* dst, int num);
 void makeAsm(struct CodeList* codeList, FILE* file);
 void initReg();
 void ir2Asm(struct InterCode* interCode, FILE* file);
-struct Variable* 
-struct Register* getReg(struct Variable* vari);
+struct Variable* insertVari(struct Operand* operand);
+struct Register* getReg(struct Operand* operand);

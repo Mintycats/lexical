@@ -5,14 +5,83 @@
 
 
 
+
 //global variable
 struct Register* reg[32];
 struct Variable* allVari = NULL;
 int offset = 0;
+FILE* Asmfile = NULL;
+
+#ifdef SIMPLE_REG
+
+struct Register* getReg(struct Operand* operand){
+    struct Variable* vari = makeVari(operand);
+    for (int i = SELF_REG_START1; i <= SELF_REG_END1; i++){
+        if (reg[i]->vari == NULL){
+            reg[i]->vari = vari;
+            vari->reg = reg[i];
+            if (i+1 <= SELF_REG_END1 && reg[i+1] != NULL){
+                reg[i+1]->vari->reg = NULL;
+                reg[i+1]->vari = NULL;
+            }
+            return reg[i];
+        }
+    }
+    for (int i = SELF_REG_START2; i <= SELF_REG_END2; i++){
+        if (reg[i]->vari == NULL){
+            reg[i]->vari = vari;
+            vari->reg = reg[i];
+            return reg[i];
+        }
+    }
+}
+#else
+
+#endif
+void clearReg(){
+    for (int i = SELF_REG_START1; i <= SELF_REG_END1; i++){
+        if (reg[i]->vari != NULL){
+            reg[i]->vari->reg = NULL;
+            reg[i]->vari = NULL;
+        }
+    }
+    for (int i = SELF_REG_START2; i <= SELF_REG_END2; i++){
+        if (reg[i]->vari == NULL){
+            reg[i]->vari->reg = NULL;
+            reg[i]->vari = NULL;
+        }
+    }
+}
+
+struct Variable* makeVari(struct Operand* operand){
+    struct Variable* vari = findVari(operand);
+    if (vari != NULL){
+        return vari;
+    }
+    vari = (struct Variable*)malloc(sizeof(struct Variable));
+    vari->op = operand;
+    vari->reg = NULL;
+    vari->offset;//todo offset
+    vari->next = allVari;
+    allVari = vari;
+    return vari;
+}
+
+struct Variable* findVari(struct Operand* operand){
+    struct Variable* tmpVari = allVari;
+    while (tmpVari != NULL){
+        if (tmpVari->op == operand){
+            debugPrint3("find vari");
+            return tmpVari;
+        }
+        tmpVari = tmpVari->next;
+    }
+    return NULL;
+}
 
 void makeRegName(char* dst, int num){
     int index = 0;
-    dst[index] = 'r';
+    dst[index] = '$';
     index++;
     if (num < 10){
         dst[index] = (num + '0');

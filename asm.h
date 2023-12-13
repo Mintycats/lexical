@@ -12,6 +12,8 @@
 #define SELF_REG_START2 24
 #define SELF_REG_END2 25
 
+#define APPLY_SIZE 512
+
 #define debugPrint3(msg) \
         if (DEBUG_FLAG3){ \
             printf("%s\n", msg); \
@@ -24,7 +26,6 @@ struct Register;
 struct Variable{
     struct Operand* op;
     struct Register* reg;
-    //location
     int offset;
     struct Variable* next;
 };
@@ -34,6 +35,14 @@ struct Register{
     struct Variable* vari;
 };
 
+struct Fp{
+    int offset;
+    struct Fp* last;
+};
+
+void initFp();
+void addFp();
+void deleteFp();
 void clearReg();
 struct Variable* makeVari(struct Operand* operand);
 struct Variable* findVari(struct Operand* operand);

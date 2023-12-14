@@ -12,7 +12,14 @@
 #define SELF_REG_START2 24
 #define SELF_REG_END2 25
 
-#define APPLY_SIZE 512
+#define CALLEE_START1 16
+#define CALLEE_END1 23
+#define CALLEE_START2 30
+#define CALLEE_END2 30
+
+#define APPLY_SIZE 1024
+
+#define PARAM_BASE 8
 
 #define debugPrint3(msg) \
         if (DEBUG_FLAG3){ \
@@ -35,15 +42,10 @@ struct Register{
     struct Variable* vari;
 };
 
-struct Fp{
-    int offset;
-    struct Fp* last;
-};
 
-void initFp();
-void addFp();
-void deleteFp();
 void clearReg();
+void saveCalleeReg();
+void recoverCalleeReg();
 struct Variable* makeVari(struct Operand* operand);
 struct Variable* findVari(struct Operand* operand);
 void makeRegName(char* dst, int num);

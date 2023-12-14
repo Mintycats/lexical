@@ -2,9 +2,9 @@
 #define STDIO
 #include<stdio.h>
 #endif
-#ifndef IR
-#define IR
-#include "irfile.h"
+#ifndef ASM
+#define ASM
+#include "asm.h"
 #endif
 
 //#define DEBUG_FLAG 1
@@ -19,6 +19,7 @@ extern void PrintTree(struct Node* rootnode, int spaceNum);
 extern void TearsDown(struct Node* rootnode);
 extern int hasStruct;
 int main(int argc, char** argv){
+    FILE* asmFile = NULL;
     FILE* irFile = NULL;
     if (argc > 1){
 	    FILE* sampleFile = fopen(argv[1], "r");
@@ -40,14 +41,17 @@ int main(int argc, char** argv){
             }
             checkSema(Root);
 	        struct CodeList* clHead = startInterCode(Root);
-	    if (argv[2] == NULL){
-	    	irFile = fopen("output.ir", "w");
-	    }
-	    else{
-	    	irFile = fopen(argv[2], "w");
-	    }
-	    writeIR(clHead, irFile);
-	    fclose(irFile);
+	        if (argv[2] == NULL){
+	    	    asmFile = fopen("output.s", "w");
+	        }
+	        else{
+	    	    asmFile = fopen(argv[2], "w");
+	        }
+            irFile = fopen("outIr.ir", "w");
+            writeIR(clHead, irFile);
+            fclose(irFile);
+	        makeAsm(clHead, asmFile);
+	        fclose(asmFile);
         }
         TearsDown(Root);
         return 0;

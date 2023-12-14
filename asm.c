@@ -3,15 +3,15 @@
 #include "asm.h"
 #endif
 
-
-
-
 //global variable
 struct Register* reg[32];
 struct Variable* allVari = NULL;
 
 FILE* Asmfile = NULL;
 struct Fp* fp = NULL;
+int argNum = 0;
+int paramNum = 0;
+int offset = -4;
 
 #ifdef SIMPLE_REG
 
@@ -19,15 +19,20 @@ struct Register* getReg(struct Operand* operand){
     struct Variable* vari = makeVari(operand);
     for (int i = SELF_REG_START1; i <= SELF_REG_END1; i++){
         if (reg[i]->vari == NULL){
+            debugPrint3("find a reg");
             reg[i]->vari = vari;
             vari->reg = reg[i];
-            if (i+1 <= SELF_REG_END1 && reg[i+1] != NULL){
+            if (i+1 <= SELF_REG_END1 && reg[i+1]->vari != NULL){
                 reg[i+1]->vari->reg = NULL;
                 reg[i+1]->vari = NULL;
             }
             if (i == SELF_REG_END1){
                 reg[SELF_REG_START1]->vari->reg = NULL;
                 reg[SELF_REG_START1]->vari = NULL;
+            }
+            if (operand->opType == OP_CONSTANT){
+                fprintf(Asmfile, "\tli %s, %d\n", reg[i]->name, operand->info.val);
+                fprintf(Asmfile, "\tsw %s, %d($fp)\n", reg[i]->name, reg[i]->vari->offset);
             }
             return reg[i];
         }
@@ -36,7 +41,7 @@ struct Register* getReg(struct Operand* operand){
         if (reg[i]->vari == NULL){
             reg[i]->vari = vari;
             vari->reg = reg[i];
-            if (i+1 <= SELF_REG_END2 && reg[i+1] != NULL){
+            if (i+1 <= SELF_REG_END2 && reg[i+1]->vari != NULL){
                 reg[i+1]->vari->reg = NULL;
                 reg[i+1]->vari = NULL;
             }
@@ -44,6 +49,10 @@ struct Register* getReg(struct Operand* operand){
                 reg[SELF_REG_START2]->vari->reg = NULL;
                 reg[SELF_REG_START2]->vari = NULL;
             }
+            if (operand->opType == OP_CONSTANT){
+                fprintf(Asmfile, "\tli %s, %d\n", reg[i]->name, operand->info.val);
+                fprintf(Asmfile, "\tsw %s, %d($fp)\n", reg[i]->name, reg[i]->vari->offset);
+            } 
             return reg[i];
         }
     }
@@ -67,6 +76,7 @@ void clearReg(){
 }
 
 struct Variable* makeVari(struct Operand* operand){
+    debugPrint3("start makeVari");
     struct Variable* vari = findVari(operand);
     if (vari != NULL){
         return vari;
@@ -74,10 +84,11 @@ struct Variable* makeVari(struct Operand* operand){
     vari = (struct Variable*)malloc(sizeof(struct Variable));
     vari->op = operand;
     vari->reg = NULL;
-    vari->offset = fp->offset;
-    fp->offset -= 4;//
+    vari->offset = offset;
+    offset -= 4;//
     vari->next = allVari;
     allVari = vari;
+    debugPrint3("end makeVari");
     return vari;
 }
 
@@ -90,6 +101,7 @@ struct Variable* findVari(struct Operand* operand){
         }
         tmpVari = tmpVari->next;
     }
+    debugPrint3("not find");
     return NULL;
 }
 
@@ -111,6 +123,7 @@ void makeRegName(char* dst, int num){
 }
 
 void initReg(){
+    debugPrint3("start initReg");
     for (int i = 0; i < 32; i++){
         reg[i] = (struct Register*)malloc(sizeof(struct Register));
         makeRegName(reg[i]->name, i);
@@ -118,45 +131,53 @@ void initReg(){
     }
 }
 
-void initFp(){
-    fp = (struct Fp*)malloc(sizeof(struct Fp));
-    fp->offset = -4;
-    fp->last = NULL;
+void saveCalleeReg(){
+    for (int i = CALLEE_START1; i <= CALLEE_END1; i++){
+        fprintf(Asmfile, "\tsw %s, %d($fp)\n", reg[i]->name, offset);
+        offset -= 4;
+    }
+    for (int i = CALLEE_START2; i <= CALLEE_END2; i++){
+        fprintf(Asmfile, "\tsw %s, %d($fp)\n", reg[i]->name, offset);
+        offset -= 4;
+    }
 }
 
-void addFp(){
-    struct Fp* tmpFp = (struct Fp*)malloc(sizeof(struct Fp));
-    tmpFp->offset = -4;
-    tmpFp->last = fp;
-    fp = tmpFp;
-}
-
-void deleteFp(){
-    struct Fp* tmpFp = fp;
-    fp = fp->last;
-    free(tmpFp);
+void recoverCalleeReg(){
+    int tmpOff = -4;
+    for (int i = CALLEE_START1; i <= CALLEE_END1; i++){
+        fprintf(Asmfile, "\tlw %s, %d($fp)\n", reg[i]->name, tmpOff);
+        tmpOff -= 4;
+    }
+    for (int i = CALLEE_START2; i <= CALLEE_END2; i++){
+        fprintf(Asmfile, "\tlw %s, %d($fp)\n", reg[i]->name, tmpOff);
+        tmpOff -= 4;
+    }
 }
 
 void ir2Asm(struct InterCode* interCode, FILE* file){
+    if (DEBUG_FLAG3){
+        printf("icType: %d\n", interCode->icType);
+    }
+
     if (interCode->icType == IC_LABEL){
-        fprintf(file, "%d:\n", interCode->info.labelNo);
+        fprintf(file, "label%d:\n", interCode->info.labelNo);
         return;
     }
     if (interCode->icType == IC_ASSIGN){
         if (interCode->info.assign.rightOp->opType == OP_CONSTANT){//x := #k
+            debugPrint3("assign const");
             struct Register* reg = getReg(interCode->info.assign.leftOp);
-            fprintf(file, "\tli %s, %d\n", reg->name, interCode->info.assign.rightOp->info.val);
-            //assign regVal to stack
-            //todo
+            debugPrint3("assign const alive");
+            fprintf(file, "\tli %s, %d\n", reg->name, interCode->info.assign.rightOp->info.val);//assign regVal to stack
             fprintf(file, "\tsw %s, %d($fp)\n", reg->name, reg->vari->offset);
             return;
         }
         if (interCode->info.assign.rightOp->opType != OP_CONSTANT){//x := y
+            debugPrint3("assign vari");
             struct Register* reg1 = getReg(interCode->info.assign.leftOp);
             struct Register* reg2 = getReg(interCode->info.assign.rightOp);
-            fprintf(file, "\tmove %s, %s\n", reg1->name, reg2->name);
-            //assign regVal to stack
-            //todo
+            fprintf(file, "\tlw %s, %d($fp)\n", reg2->name, reg2->vari->offset);
+            fprintf(file, "\tmove %s, %s\n", reg1->name, reg2->name);//assign regVal to stack
             fprintf(file, "\tsw %s, %d($fp)\n", reg1->name, reg1->vari->offset);
             return;
         }
@@ -165,17 +186,14 @@ void ir2Asm(struct InterCode* interCode, FILE* file){
         if (interCode->info.binOp.op2->opType == OP_CONSTANT){//x := y op #k
             struct Register* regVal = getReg(interCode->info.binOp.result);
             struct Register* regOp = getReg(interCode->info.binOp.op1);
+            fprintf(file, "\tlw %s, %d($fp)\n", regOp->name, regOp->vari->offset);
             if (interCode->icType == IC_ADD){
                 fprintf(file, "\taddi %s, %s, %d\n",regVal->name, regOp->name, interCode->info.binOp.op2->info.val);
-                //save regVal
-                //todo
                 fprintf(file, "\tsw %s, %d($fp)\n", regVal->name, regVal->vari->offset);
                 return;
             }
             if (interCode->icType == IC_SUB){
                 fprintf(file, "\taddi %s, %s, -%d\n", regVal->name, regOp->name, interCode->info.binOp.op2->info.val);
-                //save val
-                //todo
                 fprintf(file, "\tsw %s, %d($fp)\n", regVal->name, regVal->vari->offset);
                 return;
             }
@@ -183,7 +201,9 @@ void ir2Asm(struct InterCode* interCode, FILE* file){
         if (interCode->info.binOp.op2->opType != OP_CONSTANT){//x := y op z
             struct Register* regRes = getReg(interCode->info.binOp.result);
             struct Register* regOp1 = getReg(interCode->info.binOp.op1);
+            fprintf(file, "\tlw %s, %d($fp)\n", regOp1->name, regOp1->vari->offset);
             struct Register* regOp2 = getReg(interCode->info.binOp.op2);
+            fprintf(file, "\tlw %s, %d($fp)\n", regOp2->name, regOp2->vari->offset);
             if (interCode->icType == IC_ADD){
                 fprintf(file, "\tadd %s, %s, %s\n", regRes->name, regOp1->name, regOp2->name);
                 //save
@@ -202,94 +222,129 @@ void ir2Asm(struct InterCode* interCode, FILE* file){
     if (interCode->icType == IC_MUL){// x = y * z
         struct Register* regRes = getReg(interCode->info.binOp.result);
         struct Register* regOp1 = getReg(interCode->info.binOp.op1);
+        fprintf(file, "\tlw %s, %d($fp)\n", regOp1->name, regOp1->vari->offset);
         struct Register* regOp2 = getReg(interCode->info.binOp.op2);
+        fprintf(file, "\tlw %s, %d($fp)\n", regOp2->name, regOp2->vari->offset);
         fprintf(file, "\tmul %s, %s, %s\n", regRes->name, regOp1->name, regOp2->name);
-        //todo
         fprintf(file, "\tsw %s, %d($fp)\n", regRes->name, regRes->vari->offset);
         return;
     }
     if (interCode->icType == IC_DIV){// x = y / z
         struct Register* regRes = getReg(interCode->info.binOp.result);
         struct Register* regOp1 = getReg(interCode->info.binOp.op1);
+        fprintf(file, "\tlw %s, %d($fp)\n", regOp1->name, regOp1->vari->offset);
         struct Register* regOp2 = getReg(interCode->info.binOp.op2);
+        fprintf(file, "\tlw %s, %d($fp)\n", regOp2->name, regOp2->vari->offset);
         fprintf(file, "\tdiv %s, %s\n", regOp1->name, regOp2->name);
         fprintf(file, "\tmflo %s\n", regRes->name);
         //todo
         fprintf(file, "\tsw %s, %d($fp)\n", regRes->name, regRes->vari->offset);
         return;
     }
+    if (interCode->icType == IC_ASSIGN_ADDR){// x := &y
+        struct Register* regRes = getReg(interCode->info.assign.leftOp);
+        struct Register* regOp1 = getReg(interCode->info.assign.rightOp);
+        struct Variable* vari = regOp1->vari;
+        fprintf(file, "\taddi %s, $fp, %d\n", regRes->name, vari->offset);
+        fprintf(file, "\tsw %s, %d($fp)\n", regRes->name, regRes->vari->offset);
+        return;
+    }
     if (interCode->icType == IC_ASSIGN_ADDR_VAL){// x := *y
-        struct Register* regRes = getReg(interCode->info.binOp.result);
-        struct Register* regOp1 = getReg(interCode->info.binOp.op1);
+        struct Register* regRes = getReg(interCode->info.assign.leftOp);
+        struct Register* regOp1 = getReg(interCode->info.assign.rightOp);
+        fprintf(file, "\tlw %s, %d($fp)\n", regOp1->name, regOp1->vari->offset);
         fprintf(file, "\tlw %s, 0(%s)\n", regRes->name, regOp1->name);
-        //todo
         fprintf(file, "\tsw %s, %d($fp)\n", regRes->name, regRes->vari->offset);
         return;
     }
     if (interCode->icType == IC_ADDR_ASSIGN_VAL){// *x := y
-        struct Register* regRes = getReg(interCode->info.binOp.result);
-        struct Register* regOp1 = getReg(interCode->info.binOp.op1);
+        struct Register* regRes = getReg(interCode->info.assign.leftOp);
+        fprintf(file, "\tlw %s, %d($fp)\n", regRes->name, regRes->vari->offset);
+        struct Register* regOp1 = getReg(interCode->info.assign.rightOp);
+        fprintf(file, "\tlw %s, %d($fp)\n", regOp1->name, regOp1->vari->offset);
         fprintf(file, "\tsw %s, 0(%s)\n", regOp1->name, regRes->name);
-        //todo
         return;
     }
     if (interCode->icType == IC_GOTO){//goto x
-        fprintf(file, "\tj %d\n", interCode->info.gotoNo);
+        fprintf(file, "\tj label%d\n", interCode->info.gotoNo);
         return;
     }
-    if (interCode->icType == IC_PARAM){// arg
+    if (interCode->icType == IC_ARG){// arg
         struct Operand* arg = interCode->info.argOp;
-        //fprintf(file, "\tlw $s0, %d($fp)\n", location);
-        //fprintf(file, "\tsubu %sp, $sp, 4\n");
-        //fprintf(file, "\tsw $s0, 0($sp)\n");
-        //argNum++;
+        struct Variable* vari = makeVari(arg);
+        fprintf(file, "\tlw $s0, %d($fp)\n", vari->offset);
+        fprintf(file, "\tsubu $sp, $sp, 4\n");
+        fprintf(file, "\tsw $s0, 0($sp)\n");
+        argNum++;
         return;
     }
     if (interCode->icType == IC_CALL){// x := CALL f
-        //fprintf(file, "\tli $v1,%d\n", argNum*4);
+        fprintf(file, "\tli $v1, %d\n", argNum*4);
         fprintf(file, "\tsubu $sp, $sp, 4\n");
         fprintf(file, "\tsw $v1, 0($sp)\n");
-        //argNum = 0;
+        argNum = 0;
         fprintf(file, "\tsubu $sp, $sp, 4\n");
         fprintf(file, "\tsw $ra, 0($sp)\n");
         struct Register* reg = getReg(interCode->info.funcCall.result);
         fprintf(file, "\tjal %s\n", interCode->info.funcCall.function);
         fprintf(file, "\tmove %s, $v0\n", reg->name);
         //save to stack
-        //todo
-        fprintf(file, "\tlw $ra, 0($sp)\n");//
+        fprintf(file, "\tsw %s, %d($fp)\n", reg->name, reg->vari->offset);
+        fprintf(file, "\tlw $ra, 0($sp)\n");
         fprintf(file, "\taddi $sp, $sp, 4\n");
         //recycle stack space
-        //todo
+        fprintf(file, "\tlw $v1, 0($sp)\n");//load to v1
+        fprintf(file, "\tadd $sp, $sp, $v1\n");
         return;
     }
     if (interCode->icType == IC_FUNCTION){
         fprintf(file, "\n%s:\n", interCode->info.funcName);
+        fprintf(file, "\tsubu $sp, $sp, 4\n");
         fprintf(file, "\tsw $fp, 0($sp)\n");//save fp
         fprintf(file, "\tmove $fp, $sp\n");//reset fp
-        fprintf(file, "\taddi $sp, $sp, %d", APPLY_SIZE); //apply stack size (fp + offset)
-        //save local variable
-        //initialize stack offset, param Num
-        //todo
+        offset = -4;//initialize stack offset
+        fprintf(file, "\taddi $sp, $fp, -%d\n", APPLY_SIZE); //apply stack size (fp + offset)
+        saveCalleeReg();//save local variable
+        //initialize param Num
+        paramNum = 0;
         return;
+    }
+    if (interCode->icType == IC_PARAM){
+        paramNum += 1;//base 8
+        struct Register* regPram = getReg(interCode->info.paramOp);
+        fprintf(file, "\tlw %s, %d($fp)\n", regPram->name, PARAM_BASE+paramNum*4);
+        fprintf(file, "\tsw %s, %d($fp)\n", regPram->name, regPram->vari->offset);
+        return;
+    }
+    if (interCode->icType == IC_RETURN){
+        struct Register* retReg = getReg(interCode->info.retOp);
+        fprintf(file, "\tlw %s, %d($fp)\n", retReg->name, retReg->vari->offset);
+        fprintf(file, "\tmove $v0, %s\n", retReg->name);
+        recoverCalleeReg();
+        fprintf(file, "\tmove $sp, $fp\n");//recover sp
+        fprintf(file, "\taddi $sp, $sp, 4\n");//recover sp
+        fprintf(file, "\tlw $fp, 0($fp)\n");//recover fp
+        fprintf(file, "\tjr $ra\n");
     }
     if (interCode->icType == IC_RELOP_GOTO){
         struct Register* reg1 = getReg(interCode->info.relGoto.leftRelOp);
+        fprintf(file, "\tlw %s, %d($fp)\n", reg1->name, reg1->vari->offset);
         struct Register* reg2 = getReg(interCode->info.relGoto.rightRelOp);
+        fprintf(file, "\tlw %s, %d($fp)\n", reg2->name, reg2->vari->offset);
         char* cond = interCode->info.relGoto.relOp;
         int gotoNo = interCode->info.relGoto.gotoNo;
         if (strcmp(cond, "==") == 0)
-            fprintf(file, "\tbeq %s, %s, %d\n", reg1->name, reg2->name, gotoNo);
+            fprintf(file, "\tbeq %s, %s, label%d\n", reg1->name, reg2->name, gotoNo);
         else if (strcmp(cond, "!=") == 0)
-            fprintf(file, "\tbne %s, %s, %d\n", reg1->name, reg2->name, gotoNo);
+            fprintf(file, "\tbne %s, %s, label%d\n", reg1->name, reg2->name, gotoNo);
         else if (strcmp(cond, ">") == 0)
-            fprintf(file, "\tbgt %s, %s, %d\n", reg1->name, reg2->name, gotoNo);
+            fprintf(file, "\tbgt %s, %s, label%d\n", reg1->name, reg2->name, gotoNo);
         else if (strcmp(cond, "<") == 0)
-            fprintf(file, "\tblt %s, %s, %d\n", reg1->name, reg2->name, gotoNo);
+            fprintf(file, "\tblt %s, %s, label%d\n", reg1->name, reg2->name, gotoNo);
         else if (strcmp(cond, ">=") == 0)
-            fprintf(file, "\tbge %s, %s, %d\n", reg1->name, reg2->name, gotoNo);
+            fprintf(file, "\tbge %s, %s, label%d\n", reg1->name, reg2->name, gotoNo);
         else if (strcmp(cond, "<=") == 0)
-            fprintf(file, "\tble %s, %s, %d\n", reg1->name, reg2->name, gotoNo);
+            fprintf(file, "\tble %s, %s, label%d\n", reg1->name, reg2->name, gotoNo);
         return;
     }
     if (interCode->icType == IC_READ){
@@ -298,7 +353,7 @@ void ir2Asm(struct InterCode* interCode, FILE* file){
         fprintf(file, "\tjal read\n");
         struct Register* reg = getReg(interCode->info.readOp);
         fprintf(file, "\tmove %s, $v0\n", reg->name);
-        //todo
+        fprintf(file, "\tsw %s, %d($fp)\n", reg->name, reg->vari->offset);
         fprintf(file, "\tlw $ra, 0($sp)\n");//reload ra
         fprintf(file, "\taddi $sp, $sp, 4\n");
         return;
@@ -307,15 +362,35 @@ void ir2Asm(struct InterCode* interCode, FILE* file){
         fprintf(file, "\taddi $sp, $sp, -4\n");
         fprintf(file,"\tsw $ra, 0($sp)\n");//save ra
         struct Register* reg = getReg(interCode->info.writeOp);
-        
+        fprintf(file, "\tlw %s, %d($fp)\n", reg->name, reg->vari->offset);
+        if (interCode->info.writeOp->opType == OP_VARIABLE || interCode->info.writeOp->opType == OP_TEMP){
+            fprintf(file, "\tmove $a0, %s\n", reg->name);
+        }
+        else if (interCode->info.writeOp->opType = OP_ADDRESS || interCode->info.writeOp->opType == OP_ARRAY){
+            fprintf(file, "\tlw $a0, 0(%s)\n", reg->name);
+        }
+        fprintf(file, "\tjal write\n");
+        fprintf(file, "\tsw %s, %d($fp)\n", reg->name, reg->vari->offset);
+        fprintf(file, "\tlw $ra, 0($sp)\n");
+        fprintf(file, "\taddi $sp, $sp, 4\n");//recover ra
+        return;
+    }
+    if (interCode->icType == IC_DEC){
+        struct Register* reg = getReg(interCode->info.dec.operand);
+        int appSize = interCode->info.dec.size;
+        reg->vari->offset = offset - appSize + 4;//head is in low addr
+        offset = reg->vari->offset - 4;//reset offset
+        return;
     }
 }
 
 void makeAsm(struct CodeList* codeList, FILE* file){
+    debugPrint3("start makeAsm");
     if (file == NULL)
         return;
+    Asmfile = file;
     //save global string
-    fprintf(file, ".data\n_prompt: .asciiz \"Enter an integer:\"\n_ret: .asciiz \"\\n\"\n.global main\n.text\n");
+    fprintf(file, ".data\n_prompt: .asciiz \"Enter an integer:\"\n_ret: .asciiz \"\\n\"\n.globl main\n.text\n");
     //define read
     fprintf(file, "\nread:\n");
     fprintf(file, "\tli $v0, 4\n");
@@ -337,8 +412,14 @@ void makeAsm(struct CodeList* codeList, FILE* file){
     initReg();
     //start write asm
     struct CodeList* tmpCl = codeList;
+    int i = 1;
     while (tmpCl != NULL){
+        if (DEBUG_FLAG3){
+            printf("turn %d\n", i);
+            i++;
+        }
         ir2Asm(tmpCl->interCode, file);
+        debugPrint3("alive");
         tmpCl = tmpCl->next;
     }
 }

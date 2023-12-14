@@ -2,6 +2,7 @@
     "files.associations": {
         "typeinfo": "c",
         "asm.h": "c",
-        "irfile.h": "c"
+        "irfile.h": "c",
+        "stdio.h": "c"
     }
 }

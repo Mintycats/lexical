@@ -4,7 +4,7 @@
 #endif
 
 #ifndef DEBUG_FLAG3
-#define DEBUG_FLAG3 1
+#define DEBUG_FLAG3 0
 #endif
 
 #define SELF_REG_START1 8
@@ -17,7 +17,7 @@
 #define CALLEE_START2 30
 #define CALLEE_END2 30
 
-#define APPLY_SIZE 1024
+#define APPLY_SIZE 4096
 
 #define PARAM_BASE 8
 

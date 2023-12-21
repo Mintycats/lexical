@@ -830,6 +830,9 @@ struct TypeNode* Exp(struct Node* node){
                 semaError("9", child->lineno, "function param error");
                 return NULL;
             }
+            if (DEBUG_FLAG){
+                printf("\n\nend ID LP RP\n");
+            }
             return typeNode->info.function->type;
             
         }
@@ -910,8 +913,16 @@ struct TypeNode* Exp(struct Node* node){
         return leftType;
     }
     if (strcmp(child->rightbrother->name, "LB") == 0){
+        if (DEBUG_FLAG){
+            printf("LB RB\n");
+        }
         struct TypeNode* typeArr = Exp(child);
         struct TypeNode* typeIndex = Exp(child->rightbrother->rightbrother);
+        if (DEBUG_FLAG){
+            //printf("is NULL %d\n", typeArr->info.array.type);
+            printf("end LB RB\n");
+            //printf("index %d\n", typeIndex);
+        }
         if (typeArr->type != ARRAY){
             semaError("10", child->lineno, "array error");
             return NULL;
@@ -920,7 +931,9 @@ struct TypeNode* Exp(struct Node* node){
             semaError("12", child->lineno, "index must be int");
             return NULL;
         }
-         
+        if (DEBUG_FLAG){
+            printf("end \n");
+        }
         return typeArr->info.array.type;
     }
     if (strcmp(child->name, "Exp") == 0 && strcmp(child->rightbrother->name, "DOT") == 0){

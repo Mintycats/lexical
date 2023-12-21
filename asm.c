@@ -19,7 +19,7 @@ struct Register* getReg(struct Operand* operand){
     struct Variable* vari = makeVari(operand);
     for (int i = SELF_REG_START1; i <= SELF_REG_END1; i++){
         if (reg[i]->vari == NULL){
-            debugPrint3("find a reg");
+            //debugPrint3("find a reg");
             reg[i]->vari = vari;
             vari->reg = reg[i];
             if (i+1 <= SELF_REG_END1 && reg[i+1]->vari != NULL){
@@ -76,19 +76,24 @@ void clearReg(){
 }
 
 struct Variable* makeVari(struct Operand* operand){
-    debugPrint3("start makeVari");
+    //debugPrint3("start makeVari");
     struct Variable* vari = findVari(operand);
     if (vari != NULL){
         return vari;
+    }
+    if (DEBUG_FLAG3){
+        //printf("not find\n");
+        //printf("cur off is %d", offset);
     }
     vari = (struct Variable*)malloc(sizeof(struct Variable));
     vari->op = operand;
     vari->reg = NULL;
     vari->offset = offset;
     offset -= 4;//
+    
     vari->next = allVari;
     allVari = vari;
-    debugPrint3("end makeVari");
+    //debugPrint3("end makeVari");
     return vari;
 }
 
@@ -132,6 +137,7 @@ void initReg(){
 }
 
 void saveCalleeReg(){
+    return;
     for (int i = CALLEE_START1; i <= CALLEE_END1; i++){
         fprintf(Asmfile, "\tsw %s, %d($fp)\n", reg[i]->name, offset);
         offset -= 4;
@@ -143,6 +149,7 @@ void saveCalleeReg(){
 }
 
 void recoverCalleeReg(){
+    return;
     int tmpOff = -4;
     for (int i = CALLEE_START1; i <= CALLEE_END1; i++){
         fprintf(Asmfile, "\tlw %s, %d($fp)\n", reg[i]->name, tmpOff);
@@ -156,7 +163,7 @@ void recoverCalleeReg(){
 
 void ir2Asm(struct InterCode* interCode, FILE* file){
     if (DEBUG_FLAG3){
-        printf("icType: %d\n", interCode->icType);
+        //printf("icType: %d\n", interCode->icType);
     }
 
     if (interCode->icType == IC_LABEL){
@@ -294,6 +301,7 @@ void ir2Asm(struct InterCode* interCode, FILE* file){
         fprintf(file, "\taddi $sp, $sp, 4\n");
         //recycle stack space
         fprintf(file, "\tlw $v1, 0($sp)\n");//load to v1
+        fprintf(file, "\taddi $sp, $sp, 4\n");
         fprintf(file, "\tadd $sp, $sp, $v1\n");
         return;
     }
@@ -303,16 +311,16 @@ void ir2Asm(struct InterCode* interCode, FILE* file){
         fprintf(file, "\tsw $fp, 0($sp)\n");//save fp
         fprintf(file, "\tmove $fp, $sp\n");//reset fp
         offset = -4;//initialize stack offset
-        fprintf(file, "\taddi $sp, $fp, -%d\n", APPLY_SIZE); //apply stack size (fp + offset)
+        fprintf(file, "\taddi $sp, $sp, -%d\n", APPLY_SIZE); //apply stack size (fp + offset)
         saveCalleeReg();//save local variable
         //initialize param Num
-        paramNum = 0;
+        paramNum = 1;
         return;
     }
     if (interCode->icType == IC_PARAM){
-        paramNum += 1;//base 8
         struct Register* regPram = getReg(interCode->info.paramOp);
         fprintf(file, "\tlw %s, %d($fp)\n", regPram->name, PARAM_BASE+paramNum*4);
+        paramNum += 1;//base 8
         fprintf(file, "\tsw %s, %d($fp)\n", regPram->name, regPram->vari->offset);
         return;
     }
@@ -322,9 +330,10 @@ void ir2Asm(struct InterCode* interCode, FILE* file){
         fprintf(file, "\tmove $v0, %s\n", retReg->name);
         recoverCalleeReg();
         fprintf(file, "\tmove $sp, $fp\n");//recover sp
-        fprintf(file, "\taddi $sp, $sp, 4\n");//recover sp
         fprintf(file, "\tlw $fp, 0($fp)\n");//recover fp
+        fprintf(file, "\taddi $sp, $sp, 4\n");//recover sp
         fprintf(file, "\tjr $ra\n");
+        return;
     }
     if (interCode->icType == IC_RELOP_GOTO){
         struct Register* reg1 = getReg(interCode->info.relGoto.leftRelOp);
@@ -377,8 +386,14 @@ void ir2Asm(struct InterCode* interCode, FILE* file){
     }
     if (interCode->icType == IC_DEC){
         struct Register* reg = getReg(interCode->info.dec.operand);
+        offset += 4;
+        reg->vari->offset = 0;
         int appSize = interCode->info.dec.size;
-        reg->vari->offset = offset - appSize + 4;//head is in low addr
+        if (DEBUG_FLAG3){
+            printf("curOffset is: %d\n", offset);
+            printf("apply size is: %d\n", appSize);
+        }
+        reg->vari->offset = offset - appSize;//head is in low addr
         offset = reg->vari->offset - 4;//reset offset
         return;
     }
@@ -393,9 +408,9 @@ void makeAsm(struct CodeList* codeList, FILE* file){
     fprintf(file, ".data\n_prompt: .asciiz \"Enter an integer:\"\n_ret: .asciiz \"\\n\"\n.globl main\n.text\n");
     //define read
     fprintf(file, "\nread:\n");
-    fprintf(file, "\tli $v0, 4\n");
-    fprintf(file, "\tla $a0, _prompt\n");
-    fprintf(file, "\tsyscall\n");
+    //fprintf(file, "\tli $v0, 4\n");
+    //fprintf(file, "\tla $a0, _prompt\n");
+    //fprintf(file, "\tsyscall\n");
     fprintf(file, "\tli $v0, 5\n");
     fprintf(file, "\tsyscall\n");
     fprintf(file, "\tjr $ra\n");
@@ -415,11 +430,13 @@ void makeAsm(struct CodeList* codeList, FILE* file){
     int i = 1;
     while (tmpCl != NULL){
         if (DEBUG_FLAG3){
-            printf("turn %d\n", i);
+            //printf("turn %d\n", i);
+            //if (i == 3)
+                //return;
             i++;
         }
         ir2Asm(tmpCl->interCode, file);
-        debugPrint3("alive");
+        //debugPrint3("alive");
         tmpCl = tmpCl->next;
     }
 }

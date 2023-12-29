@@ -1290,8 +1290,8 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
         if (tmpHash == NULL)
             return NULL;
         struct Function* func = tmpHash->type->info.function;
-        struct ArgList* args[10];
-        for (int i = 0; i < 10; i++)
+        struct ArgList* args[50];
+        for (int i = 0; i < 50; i++)
             args[i] = 0;
         struct CodeList* cl1 = trans_Args(child->rightbrother->rightbrother, args, func->param);
         struct CodeList* cl2 = NULL;
@@ -1301,7 +1301,7 @@ struct CodeList* trans_Exp(struct Node* node, struct Operand* operand){
             
         }
         int lastIndex = 0;
-        for (int i = 9; i >= 0; i--){
+        for (int i = 49; i >= 0; i--){
             if (args[i] != NULL){
                 lastIndex = i;
                 break;
@@ -1440,7 +1440,7 @@ struct CodeList* trans_Args(struct Node* node, struct ArgList** args, struct Fie
             struct ArgList* newArg = (struct ArgList*)malloc(sizeof(struct ArgList));
             newArg->args = op2;
             newArg->next = NULL;
-            for (int i = 0; i < 10; i++){
+            for (int i = 0; i < 50; i++){
                 if (args[i] == NULL){
                     args[i] = newArg;
                     break;
@@ -1452,7 +1452,7 @@ struct CodeList* trans_Args(struct Node* node, struct ArgList** args, struct Fie
         struct ArgList* newArg = (struct ArgList*)malloc(sizeof(struct ArgList));
         newArg->args = op1;
         newArg->next = NULL;
-        for (int i = 0; i < 10; i++){
+        for (int i = 0; i < 50; i++){
             if (args[i] == NULL){
                 args[i] = newArg;
                 break;
@@ -1473,7 +1473,7 @@ struct CodeList* trans_Args(struct Node* node, struct ArgList** args, struct Fie
         struct ArgList* newArg = (struct ArgList*)malloc(sizeof(struct ArgList));
         newArg->args = op2;
         newArg->next = NULL;
-        for (int i = 0; i < 10; i++){
+        for (int i = 0; i < 50; i++){
             if (args[i] == NULL){
                 args[i] = newArg;
                 break;
@@ -1487,7 +1487,7 @@ struct CodeList* trans_Args(struct Node* node, struct ArgList** args, struct Fie
     struct ArgList* newArg = (struct ArgList*)malloc(sizeof(struct ArgList));
     newArg->args = op1;
     newArg->next = NULL;
-    for (int i = 0; i < 10; i++){
+    for (int i = 0; i < 50; i++){
         if (args[i] == NULL){
             args[i] = newArg;
             break;
